@@ -36,7 +36,6 @@
 </div>
 </body>
 <script>
-    var timePlay = null;
 
     $("#container .ImgList").eq(0).show().siblings("p").hide();//只显示第一张
 
@@ -44,15 +43,14 @@
     var _index = 0;
 
     function autoPlay() {
-        timePlay = setInterval(function () {
-            _index++;
-            $("#container .ImgList").eq(_index).fadeIn().siblings("p").fadeOut();
-            if (_index == $(".ImgList").length - 1) {
-                _index = -1
-            }
-        }, 3000);
+        _index++;
+        $("#container .ImgList").eq(_index).fadeIn().siblings("p").fadeOut();
+        if (_index == $(".ImgList").length - 1) {
+            _index = -1
+        }
+
     };
-    autoPlay();//调用和执行
+   setInterval(autoPlay, 3000);
     var audio = document.getElementById('music1');
     $(".ImgList").bind("touchstart", function bf() {
         if(audio !== null) {
@@ -62,6 +60,12 @@
                 audio.play(); //audio.play();// 这个就是播放
             }
         }
+    })
+    $(".ImgList").bind("touch", function bf() {
+        autoPlay();
+    })
+    $(".ImgList").bind("click", function bf() {
+        autoPlay();
     })
     $("html").one('touchstart',function(){
         audio.play();
