@@ -1,11 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="cn">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>轮播图之自动轮播</title>
+    <title>图册</title>
     <style>
         .ImgList {
             width: 100%;
@@ -16,8 +13,8 @@
     </style>
     <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 </head>
-
-<body style="text-align: center">
+<body>
+<audio id="audio" src="./img/audio.mp3" autoplay="autoplay" loop="loop" hidden  controls></audio>
 <div id="container">
     <p class="ImgList" style="background:url('./img/1.jpg') center; background-size: cover"></p>
     <p class="ImgList" style="background:url('./img/2.jpg') center; background-size: cover"></p>
@@ -34,7 +31,6 @@
     <p class="ImgList" style="background:url('./img/13.jpg') center; background-size: cover"></p>
     <p class="ImgList" style="background:url('./img/14.jpg') center; background-size: cover"></p>
     <p class="ImgList" style="background:url('./img/15.jpg') center; background-size: cover"></p>
-    <audio src="./img/audio.mp3" autoplay loop hidden></audio>
 </div>
 </body>
 <script>
@@ -44,16 +40,30 @@
 
     //自动轮播
     var _index = 0;
+
     function autoPlay() {
         timePlay = setInterval(function () {
             _index++;
             $("#container .ImgList").eq(_index).fadeIn().siblings("p").fadeOut();
-            if(_index == $(".ImgList").length - 1){
+            if (_index == $(".ImgList").length - 1) {
                 _index = -1
             }
-        }, 2000);
+        }, 3000);
     };
     autoPlay();//调用和执行
-</script>
+    function audioAutoPlay(id) {
+        var audio = document.getElementById(id);
+        audio.play();
+        document.addEventListener("WeixinJSBridgeReady", function () {
+            audio.play();
+        }, false);
+        document.addEventListener('YixinJSBridgeReady', function () {
+            audio.play();
+        }, false);
+    }
 
+    $(function (){
+        audioAutoPlay('audio');
+    })
+</script>
 </html>
