@@ -14,7 +14,9 @@
     <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 </head>
 <body>
-<audio id="audio" src="./img/audio.mp3" autoplay="autoplay" loop="loop" hidden  controls></audio>
+<audio id="music1" controls="controls" autoplay="autoplay" preload id="music1" hidden>
+    <source src="./img/audio.mp3" />
+</audio>
 <div id="container">
     <p class="ImgList" style="background:url('./img/1.jpg') center; background-size: cover"></p>
     <p class="ImgList" style="background:url('./img/2.jpg') center; background-size: cover"></p>
@@ -51,19 +53,18 @@
         }, 3000);
     };
     autoPlay();//调用和执行
-    function audioAutoPlay(id) {
-        var audio = document.getElementById(id);
+    var audio = document.getElementById('music1');
+    $(".ImgList").bind("touchstart", function bf() {
+        if(audio !== null) {
+            //检测播放是否已暂停.audio.paused 在播放器播放时返回false.
+            //alert(audio.paused);
+            if(audio.paused) {
+                audio.play(); //audio.play();// 这个就是播放
+            }
+        }
+    })
+    $("html").one('touchstart',function(){
         audio.play();
-        document.addEventListener("WeixinJSBridgeReady", function () {
-            audio.play();
-        }, false);
-        document.addEventListener('YixinJSBridgeReady', function () {
-            audio.play();
-        }, false);
-    }
-
-    $(function (){
-        audioAutoPlay('audio');
     })
 </script>
 </html>
