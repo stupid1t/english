@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cn">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>图册</title>
@@ -13,11 +13,12 @@
     </style>
     <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 </head>
-<body tyle="margin: 0">
+<body style="margin: 0">
 <audio autoplay="autoplay" preload style="display:none; height: 0" id="bg-music">
     <source src="./img/audio.mp3" />
 </audio>
 <div id="container">
+    <div  style="position: fixed;right: 40%;z-index: 99999;top: 40%;"><img onclick="start()" src="./img/play.png" /></div>
     <p class="ImgList" style="background:url('./img/1.jpg') center; background-size: cover"></p>
     <p class="ImgList" style="background:url('./img/2.jpg') center; background-size: cover"></p>
     <p class="ImgList" style="background:url('./img/3.jpg') center; background-size: cover"></p>
@@ -48,7 +49,7 @@
         }
 
     };
-   setInterval(autoPlay, 3000);
+
     $(".ImgList").bind("touch", function bf() {
         autoPlay();
     })
@@ -56,10 +57,17 @@
         autoPlay();
     })
 
+    function start(){
+        setInterval(autoPlay, 3000);
+        $("img").remove();
+    }
+
     //音乐自动播放
     $(document).ready(function(){
-        autoPlayMusic();
-        audioAutoPlay();
+        window.setTimeout(()=>{
+            autoPlayMusic();
+            audioAutoPlay();
+        },1000)
     });
     function audioAutoPlay() {
         var audio = document.getElementById('bg-music');
