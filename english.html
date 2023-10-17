@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>单词记忆</title>
+    <meta charset="UTF-8">
+    <style>
+        #stepContainer {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: gray;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 40px;
+        }
+
+        .active {
+            background-color: green;
+        }
+
+        #fileInputContainer {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #questionContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #question {
+            font-size: 80px;
+            margin-bottom: 10px;
+        }
+
+        #answer {
+            width: 600px;
+            #height: 40px;
+            font-size: 90px;
+            margin-bottom: -5px;
+        }
+
+        #result {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 600px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0px;
+            color: red
+        }
+
+        .modal-body {
+            margin-bottom: 10px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-footer button {
+            margin-left: 10px;
+        }
+
+        #question {
+            font-size: 50px;
+        }
+
+        button {
+            height: 40px;
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            height: 50px;
+            line-height: 50px;
+        }
+
+        #errorModalBody {
+            font-size: 30px;
+        }
+
+        .different {
+            color: red;
+        }
+    </style>
+    <script>
+        var ok = 0;
+        var error = 0;
+        var questions = [];
+        var questions_bak = []
+        var currentQuestionIndex = 0;
+        var incorrectAnswers = [];
+
+        function showStep(step) {
+            var steps = document.getElementsByClassName("step");
+            for (var i = 0; i < steps.length; i++) {
+                steps[i].classList.remove("active");
+            }
+            steps[step - 1].classList.add("active");
+            document.getElementById("answer").focus()
+        }
+
+        function showQuestionContainer() {
+            document.getElementById("fileInputContainer").style.display = "none";
+            document.getElementById("questionContainer").style.display = "flex";
+            showStep(2);
+            displayQuestion(); // 添加这行代码
+        }
+
+
+        function displayQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                var question = questions[currentQuestionIndex].question;
+                document.getElementById("question").textContent = question;
+                document.getElementById("answer").value = "";
+            } else {
+                showStep(3)
+                document.getElementById("question").textContent = "题目已完成，正确：" + ok + " 错误：" + error;
+                document.getElementById("answer").style.display = "none";
+                document.getElementById("submitBtn").style.display = "none";
+                document.getElementById("againBtn").style.display = "block";
+                document.getElementById("againErrorBtn").style.display = "block";
+                document.getElementById("errorBtn").style.display = "block";
+            }
+        }
+
+        var errorQuestion = new Set()
+
+        function checkAnswer() {
+            var userAnswer = document.getElementById("answer").value.trim();
+            if(!userAnswer){
+                alert("请填写答案")
+                return;
+            }
+            var correctAnswer = questions[currentQuestionIndex].answer.trim();
+            if (userAnswer === correctAnswer) {
+                currentQuestionIndex++;
+                ok++;
+                displayQuestion();
+            } else {
+                let q = questions[currentQuestionIndex].question
+                if (!errorQuestion.has(q)) {
+                    error++
+                    incorrectAnswers.push([q, correctAnswer, userAnswer]);
+                    errorQuestion.add(q)
+                }
+                showErrorModal();
+            }
+        }
+
+        function showErrorModal() {
+            var modal = document.getElementById("errorModal");
+            var modalBody = document.getElementById("errorModalBody");
+            var closeButton = document.getElementById("errorModalCloseButton");
+            modalBody.innerHTML = `
+             <div><span style="color: green;background: #ececec">${questions[currentQuestionIndex].answer}</span></div><br/>
+             <div><span style="background: #ececec">${compareStrings(questions[currentQuestionIndex].answer, document.getElementById("answer").value.trim())}</span></div>
+            `
+            modal.style.display = "block";
+            document.getElementById("errorBtnKnow").focus()
+        }
+
+        function handleFileSelect(event) {
+            var file = event.target.files[0];
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                debugger;
+                var contents = e.target.result.replace(/\r+/g,'').replace(/\n+/g,'\n');
+                var lines = contents.split("\n");
+                for (var i = 0; i < lines.length; i += 2) {
+                    try {
+                        var question = lines[i + 1].trim();
+                        var answer = lines[i].trim();
+                        questions.push({question: question, answer: answer});
+                    } catch (e) {
+
+                    }
+                }
+                questions_bak = questions;
+                showQuestionContainer();
+            };
+            reader.readAsText(file);
+        }
+
+        function againAnswers(flag) {
+            currentQuestionIndex = 0
+            ok = 0
+            error = 0
+            document.getElementById("answer").style.display = "inline";
+            document.getElementById("submitBtn").style.display = "inline";
+            document.getElementById("againBtn").style.display = "none";
+            document.getElementById("againErrorBtn").style.display = "none";
+            document.getElementById("errorBtn").style.display = "none";
+            if (flag) {
+                questions = []
+                for (q of incorrectAnswers) {
+                    questions.push({question: q[0], answer: q[1]});
+                }
+            } else {
+                questions = questions_bak;
+            }
+            showQuestionContainer()
+        }
+
+        function replaceNonAlphanumeric(event) {
+            var input = event.target;
+            var inputValue = input.value;
+            var replacedValue = inputValue.replace(/[^ \-a-zA-Z0-9.,?!/='"><$&*()~`@#%^_+{}\[\]:;、\\]/g, '');
+            input.value = replacedValue;
+        }
+
+
+        function exportIncorrectAnswers() {
+            // 获取当前日期
+            var currentDate = new Date();
+            var formattedDate = currentDate.toISOString().split('T')[0];
+            var content = "";
+            for (var i = 0; i < incorrectAnswers.length; i++) {
+                var question = incorrectAnswers[i][0];
+                var correctAnswer = incorrectAnswers[i][1];
+                var userAnswer = incorrectAnswers[i][2];
+                content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
+
+            }
+            var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "错题记录_" + formattedDate + ".txt");
+            link.click();
+
+
+            content = "";
+            for (var i = 0; i < incorrectAnswers.length; i++) {
+                var question = incorrectAnswers[i][1];
+                var correctAnswer = incorrectAnswers[i][0];
+                content += question + "\n" + correctAnswer + "\n";
+            }
+            var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "错题题库_" + formattedDate + ".txt");
+            link.click();
+        }
+
+
+        function checkEnter(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                checkAnswer();
+            }
+        }
+
+        function compareStrings(stringA, stringB) {
+            var result = '';
+
+            var minLength = Math.min(stringA.length, stringB.length);
+
+            for (var i = 0; i < minLength; i++) {
+                if (stringA[i] !== stringB[i]) {
+                    result += '<span class="different">' + stringB[i] + '</span>';
+                } else {
+                    result += stringB[i];
+                }
+            }
+
+            if (stringA.length > minLength) {
+                result += '<span style="color: orange">' + stringA.slice(minLength) + '</span>';
+            } else if (stringB.length > minLength) {
+                result += '<span class="different">' + stringB.slice(minLength) + '</span>';
+            }
+
+            return result;
+        }
+    </script>
+</head>
+<body>
+<div id="stepContainer">
+    <div class="step active">1</div>
+    <font style="font-size:36px">选择题目</font>&nbsp;&nbsp;
+    <div class="step">2</div>
+    <font style="font-size:36px">答题</font>&nbsp;&nbsp;
+    <div class="step">3</div>
+    <font style="font-size:36px">完成</font>
+</div>
+<div id="fileInputContainer">
+    <input type="file" id="fileInput" accept=".txt" onchange="handleFileSelect(event)"/>
+</div>
+<div id="questionContainer">
+    <div id="question"></div>
+    <div>
+        <textarea id="answer" oninput="replaceNonAlphanumeric(event)" placeholder="请输入答案" rows="5"
+                  onkeypress="checkEnter(event)"></textarea>
+        <button id="submitBtn" onclick="checkAnswer()">下一题</button>
+    </div>
+    <div style="display:flex">
+        <button id="againBtn" style="display:none" onclick="againAnswers()">再来一次</button>
+        <button id="againErrorBtn" style="display:none" onclick="againAnswers(true)">练习错题</button>
+        <button id="errorBtn" style="display:none" onclick="exportIncorrectAnswers()">导出错题</button>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="errorModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">回答错误</h5>
+        </div>
+        <div class="modal-body" id="errorModalBody">
+
+        </div>
+        <div class="modal-footer">
+            <button id="errorBtnKnow" type="button" onclick="closeErrorModal()">我知道了</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function closeErrorModal() {
+        var modal = document.getElementById("errorModal");
+        modal.style.display = "none";
+        document.getElementById("answer").value = "";
+        document.getElementById("answer").focus()
+    }
+</script>
+</body>
+</html>
