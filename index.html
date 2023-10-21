@@ -105,7 +105,6 @@
 
         #question {
             font-size: 50px;
-            display: inline;
         }
 
         button {
@@ -134,6 +133,7 @@
         var questions_bak = []
         var currentQuestionIndex = 0;
         var incorrectAnswers = [];
+        var jumpAnswers = [];
 
         function showStep(step) {
             var steps = document.getElementsByClassName("step");
@@ -162,6 +162,7 @@
                 document.getElementById("question").textContent = "题目已完成，正确：" + ok + " 错误：" + error;
                 document.getElementById("answer").style.display = "none";
                 document.getElementById("submitBtn").style.display = "none";
+                document.getElementById("jumpBtn").style.display = "none";
                 document.getElementById("againBtn").style.display = "block";
                 document.getElementById("againErrorBtn").style.display = "block";
                 document.getElementById("errorBtn").style.display = "block";
@@ -172,20 +173,20 @@
 
         function checkAnswer() {
             var userAnswer = document.getElementById("answer").value.trim();
-            if(!userAnswer){
+            if (!userAnswer) {
                 alert("请填写答案")
-                new Audio('./error.wav').play();
+                document.querySelector("#incorrect").play();
                 return;
             }
             var correctAnswer = questions[currentQuestionIndex].answer.trim();
             if (userAnswer === correctAnswer) {
                 currentQuestionIndex++;
                 ok++;
-                new Audio('./correct.wav').play();
+                document.querySelector("#correct").play();
                 displayQuestion();
             } else {
                 let q = questions[currentQuestionIndex].question
-                new Audio('./error.wav').play();
+                document.querySelector("#incorrect").play();
                 if (!errorQuestion.has(q)) {
                     error++
                     incorrectAnswers.push([q, correctAnswer, userAnswer]);
@@ -193,6 +194,20 @@
                 }
                 showErrorModal();
             }
+        }
+
+        var jumpQuestion = new Set()
+
+        function jump() {
+            document.querySelector("#correct").play();
+            let q = questions[currentQuestionIndex].question
+            var correctAnswer = questions[currentQuestionIndex].answer.trim();
+            if (!jumpQuestion.has(q)) {
+                jumpAnswers.push([q, correctAnswer]);
+                errorQuestion.add(q)
+            }
+            currentQuestionIndex++;
+            displayQuestion();
         }
 
         function showErrorModal() {
@@ -212,7 +227,7 @@
             var reader = new FileReader();
             reader.onload = function (e) {
                 debugger;
-                var contents = e.target.result.replace(/\r+/g,'').replace(/\n+/g,'\n');
+                var contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
                 var lines = contents.split("\n");
                 for (var i = 0; i < lines.length; i += 2) {
                     try {
@@ -235,6 +250,7 @@
             error = 0
             document.getElementById("answer").style.display = "inline";
             document.getElementById("submitBtn").style.display = "inline";
+            document.getElementById("jumpBtn").style.display = "inline";
             document.getElementById("againBtn").style.display = "none";
             document.getElementById("againErrorBtn").style.display = "none";
             document.getElementById("errorBtn").style.display = "none";
@@ -258,6 +274,7 @@
 
 
         function exportIncorrectAnswers() {
+            document.querySelector("#correct").play();
             // 获取当前日期
             var currentDate = new Date();
             var formattedDate = currentDate.toISOString().split('T')[0];
@@ -267,13 +284,14 @@
                 var correctAnswer = incorrectAnswers[i][1];
                 var userAnswer = incorrectAnswers[i][2];
                 content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
-
             }
-            var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
-            var link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "错题记录_" + formattedDate + ".txt");
-            link.click();
+            if (content) {
+                var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
+                var link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "错题记录_" + formattedDate + ".txt");
+                link.click();
+            }
 
 
             content = "";
@@ -282,11 +300,27 @@
                 var correctAnswer = incorrectAnswers[i][0];
                 content += question + "\n" + correctAnswer + "\n";
             }
-            var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
-            var link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "错题题库_" + formattedDate + ".txt");
-            link.click();
+            if (content) {
+                var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
+                var link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "错题题库_" + formattedDate + ".txt");
+                link.click();
+            }
+
+            content = "";
+            for (var i = 0; i < jumpAnswers.length; i++) {
+                var question = jumpAnswers[i][1];
+                var correctAnswer = jumpAnswers[i][0];
+                content += question + "\n" + correctAnswer + "\n";
+            }
+            if (content) {
+                var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
+                var link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "跳过题目_" + formattedDate + ".txt");
+                link.click();
+            }
         }
 
 
@@ -299,38 +333,55 @@
 
         function compareStrings(stringA, stringB) {
             var result = '';
-
-            var minLength = Math.min(stringA.length, stringB.length);
-
-            for (var i = 0; i < minLength; i++) {
-                if (stringA[i] !== stringB[i]) {
-                    result += '<span class="different">' + stringB[i] + '</span>';
-                } else {
-                    result += stringB[i];
+            for (var i = 0; i < stringB.length; i++) {
+                let aChar = stringA[i]
+                let bChar = stringB[i]
+                if (aChar !== undefined && bChar !== undefined) {
+                    if (stringA[i] !== bChar) {
+                        if (bChar === ' ') {
+                            bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
+                        }
+                        result += '<span class="different">' + bChar + '</span>';
+                    } else {
+                        result += bChar;
+                    }
+                } else if (aChar == undefined && bChar !== undefined) {
+                    if (bChar === ' ') {
+                        bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
+                    }
+                    result += '<span class="different">' + bChar + '</span>';
+                } else if (aChar !== undefined && bChar == undefined) {
+                    if (bChar === ' ') {
+                        bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
+                    }
+                    result += '<span class="different">' + bChar + '</span>';
                 }
             }
-
-            if (stringA.length > minLength) {
-                result += '<span style="color: orange">' + stringA.slice(minLength) + '</span>';
-            } else if (stringB.length > minLength) {
-                result += '<span class="different">' + stringB.slice(minLength) + '</span>';
-            }
-
             return result;
         }
 
         // 监听键盘按下事件
         document.addEventListener('keydown', function(event) {
-            new Audio('./press.wav').play();
+            document.querySelector("#btnKeyPress").play();
         });
 
         function readWord(){
             var correctAnswer = questions[currentQuestionIndex].answer.trim();
             new Audio(`https://dict.youdao.com/dictvoice?audio=${correctAnswer}&type=2`).play();
         }
+
+        function closeErrorModal() {
+            var modal = document.getElementById("errorModal");
+            modal.style.display = "none";
+            document.getElementById("answer").value = "";
+            document.getElementById("answer").focus()
+        }
     </script>
 </head>
 <body>
+<audio id="btnKeyPress" src="./press.wav"></audio>
+<audio id="correct" src="./correct.wav"></audio>
+<audio id="incorrect" src="./error.wav"></audio>
 <div id="stepContainer">
     <div class="step active">1</div>
     <font style="font-size:36px">选择题目</font>&nbsp;&nbsp;
@@ -343,14 +394,13 @@
     <input type="file" id="fileInput" accept=".txt" onchange="handleFileSelect(event)"/>
 </div>
 <div id="questionContainer">
-    <div>
     <div id="question"></div>&nbsp;&nbsp;
-    <span><svg onclick="readWord()" style="width: 40px;height: 40px; cursor: pointer; z-index: 9999" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
-    </div>
+    <span style="display: inline"><svg onclick="readWord()" style="width: 40px;height: 40px; cursor: pointer; z-index: 9999" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
     <div>
         <textarea id="answer" oninput="replaceNonAlphanumeric(event)" placeholder="请输入答案" rows="5"
                   onkeypress="checkEnter(event)"></textarea>
         <button id="submitBtn" onclick="checkAnswer()">下一题</button>
+        <button id="jumpBtn" onclick="jump()">跳过</button>
     </div>
     <div style="display:flex">
         <button id="againBtn" style="display:none" onclick="againAnswers()">再来一次</button>
@@ -373,14 +423,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    function closeErrorModal() {
-        var modal = document.getElementById("errorModal");
-        modal.style.display = "none";
-        document.getElementById("answer").value = "";
-        document.getElementById("answer").focus()
-    }
-</script>
 </body>
 </html>
