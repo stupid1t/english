@@ -113,11 +113,6 @@
             margin-bottom: 10px;
         }
 
-        input {
-            height: 50px;
-            line-height: 50px;
-        }
-
         #errorModalBody {
             font-size: 30px;
         }
@@ -126,6 +121,7 @@
             color: red;
         }
     </style>
+    <script src="./decimal.js"></script>
     <script>
         var ok = 0;
         var error = 0;
@@ -153,8 +149,13 @@
 
 
         function displayQuestion() {
+            delClock()
             if (currentQuestionIndex < questions.length) {
                 var question = questions[currentQuestionIndex].question;
+                var answer = questions[currentQuestionIndex].answer;
+                if(document.querySelector("#starTime").checked){
+                    setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN))
+                }
                 document.getElementById("question").textContent = question;
                 document.getElementById("answer").value = "";
             } else {
@@ -210,6 +211,19 @@
             displayQuestion();
         }
 
+        var jumpTimeoutQuestion = new Set()
+        function jumpTimeout() {
+            document.querySelector("#correct").play();
+            let q = questions[currentQuestionIndex].question
+            var correctAnswer = questions[currentQuestionIndex].answer.trim();
+            if (!jumpTimeoutQuestion.has(q)) {
+                jumpTimeoutQuestion.add([q, correctAnswer]);
+                errorQuestion.add(q)
+            }
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
         function showErrorModal() {
             var modal = document.getElementById("errorModal");
             var modalBody = document.getElementById("errorModalBody");
@@ -226,7 +240,6 @@
             var file = event.target.files[0];
             var reader = new FileReader();
             reader.onload = function (e) {
-                debugger;
                 var contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
                 var lines = contents.split("\n");
                 for (var i = 0; i < lines.length; i += 2) {
@@ -323,9 +336,38 @@
             }
         }
 
+        let downTime = 0.1;
+        let answerClock = undefined
+        function setClock(questionTime=60){
+            debugger;
+            const answerClockEle = document.querySelector("#answerClockEle")
+            if (answerClockEle.innerText === '(0.0)'){
+                answerClockEle.innerText = '(' + questionTime + ')';
+            }
+            answerClock = setInterval(()=>{
+                let val = document.querySelector("#answerClockEle").innerText.replace(/[\(\)]/g,'')
+                if(parseFloat(val) > 0){
+                    val = new Decimal(val).sub(downTime).toNumber().toFixed(1, Decimal.ROUND_DOWN);
+                    document.querySelector("#answerClockEle").innerText = '(' + val + ')'
+                }else{
+                    delClock()
+                    // 题目结束，下一题
+                    jumpTimeout()
+                }
+            }, downTime * 1000)
+        }
+
+        function delClock(){
+            if (answerClock != undefined){
+                document.querySelector("#answerClockEle").innerText = '(0.0)'
+                clearInterval(answerClock);
+                answerClock = undefined;
+            }
+        }
+
 
         function checkEnter(event) {
-            if (event.keyCode === 13) {
+            if (event.keyCode === 13 && document.querySelector("#nextQuest").checked) {
                 event.preventDefault();
                 checkAnswer();
             }
@@ -376,6 +418,16 @@
             document.getElementById("answer").value = "";
             document.getElementById("answer").focus()
         }
+
+        function startTimeChange(target){
+            if(target.checked){
+                document.querySelector("#answerClockEle").style = "display:inline";
+                document.querySelector('#interval').style = 'display:inline';
+            }else {
+                document.querySelector("#answerClockEle").style = "display:none";
+                document.querySelector('#interval').style = 'display:none';
+            }
+        }
     </script>
 </head>
 <body>
@@ -386,12 +438,25 @@
     <div class="step active">1</div>
     <font style="font-size:36px">选择题目</font>&nbsp;&nbsp;
     <div class="step">2</div>
-    <font style="font-size:36px">答题</font>&nbsp;&nbsp;
+    <font style="font-size:36px">答题<span id="answerClockEle" style="display: none">(0.0)</span></font>&nbsp;&nbsp;
     <div class="step">3</div>
     <font style="font-size:36px">完成</font>
 </div>
 <div id="fileInputContainer">
-    <input type="file" id="fileInput" accept=".txt" onchange="handleFileSelect(event)"/>
+    <div>
+        <label for="starTime">计时功能</label>
+        <input id="starTime" type="checkbox" name="starTime" onchange="startTimeChange(this)"/>
+        <input style="display: none;" type="number" id="interval" name="interval" step="0.1" placeholder="单个字母的耗时"  />
+    </div>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <div>
+        <label for="nextQuest">回车下一题</label>
+        <input id="nextQuest" type="checkbox" name="nextQuest"  checked/>
+    </div>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <div>
+        <input type="file" id="fileInput" accept=".txt" onchange="handleFileSelect(event)"/>
+    </div>
 </div>
 <div id="questionContainer">
     <div id="question"></div>&nbsp;&nbsp;
