@@ -235,6 +235,7 @@
                 errorQuestion.add(q)
             }
             currentQuestionIndex++;
+            closeErrorModal()
             displayQuestion();
         }
 
@@ -489,13 +490,13 @@
 </div>
 <div id="fileInputContainer">
     <div>
-        <label for="starTime">计时功能</label>
+        <label for="starTime">计时</label>
         <input id="starTime" type="checkbox" name="starTime" onchange="startTimeChange(this)"/>
-        <input style="display: none;" type="number" id="interval" name="interval" step="0.1" placeholder="单个字母的耗时"  />
+        <input style="display: none;" type="number" id="interval" name="interval" step="0.1" placeholder="单个字母的耗时（秒）"  />
     </div>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     <div>
-        <label for="nextQuest">回车下一题</label>
+        <label for="nextQuest">回车</label>
         <input id="nextQuest" type="checkbox" name="nextQuest"  checked/>
     </div>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
