@@ -339,7 +339,7 @@
                 content += question + "\n" + correctAnswer + "\n";
             }
             if (content) {
-                zip.file( "跳过题目_" + formattedDate + ".txt", content);
+                zip.file( "跳过题库_" + formattedDate + ".txt", content);
             }
 
             // 超时的题
@@ -372,7 +372,7 @@
                 content += question + "\n" + answer + "\n" + time + "\n";
             }
             if (content) {
-                zip.file( "答题耗时_" + formattedDate + ".txt", content);
+                zip.file( "耗时记录_" + formattedDate + ".txt", content);
             }
 
             zip.generateAsync({type:"blob"})
