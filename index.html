@@ -122,6 +122,8 @@
         }
     </style>
     <script src="./decimal.js"></script>
+    <script src="./jszip.min.js"></script>
+    <script src="./FileSaver.min.js"></script>
     <script>
         var ok = 0;
         var error = 0;
@@ -147,9 +149,17 @@
             displayQuestion(); // 添加这行代码
         }
 
-
+        let start_time = undefined
         function displayQuestion() {
             delClock()
+            let now = new Date().getTime();
+            if (start_time){
+                let diff = new Decimal(now - start_time).div(1000).toNumber().toFixed(1, Decimal.ROUND_DOWN)
+                questions_bak[currentQuestionIndex - 1].time = diff;
+                start_time = now;
+            }else {
+                start_time = now;
+            }
             if (currentQuestionIndex < questions.length) {
                 var question = questions[currentQuestionIndex].question;
                 var answer = questions[currentQuestionIndex].answer;
@@ -204,6 +214,7 @@
             let q = questions[currentQuestionIndex].question
             var correctAnswer = questions[currentQuestionIndex].answer.trim();
             if (!jumpQuestion.has(q)) {
+                jumpQuestion.add(q)
                 jumpAnswers.push([q, correctAnswer]);
                 errorQuestion.add(q)
             }
@@ -211,13 +222,16 @@
             displayQuestion();
         }
 
-        var jumpTimeoutQuestion = new Set()
+        var jumpTimeoutQuestionSet = new Set();
+        var jumpTimeoutQuestion = []
         function jumpTimeout() {
             document.querySelector("#correct").play();
             let q = questions[currentQuestionIndex].question
             var correctAnswer = questions[currentQuestionIndex].answer.trim();
-            if (!jumpTimeoutQuestion.has(q)) {
-                jumpTimeoutQuestion.add([q, correctAnswer]);
+            var userAnswer = document.getElementById("answer").value.trim();
+            if (!jumpTimeoutQuestionSet.has(q)) {
+                jumpTimeoutQuestionSet.add(q)
+                jumpTimeoutQuestion.push([q, correctAnswer, userAnswer]);
                 errorQuestion.add(q)
             }
             currentQuestionIndex++;
@@ -287,10 +301,13 @@
 
 
         function exportIncorrectAnswers() {
+            var zip = new JSZip();
             document.querySelector("#correct").play();
             // 获取当前日期
             var currentDate = new Date();
             var formattedDate = currentDate.toISOString().split('T')[0];
+
+            // 错题记录
             var content = "";
             for (var i = 0; i < incorrectAnswers.length; i++) {
                 var question = incorrectAnswers[i][0];
@@ -299,14 +316,11 @@
                 content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
             }
             if (content) {
-                var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
-                var link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "错题记录_" + formattedDate + ".txt");
-                link.click();
+                zip.file( "错题记录_" + formattedDate + ".txt", content);
             }
 
 
+            // 错误的题
             content = "";
             for (var i = 0; i < incorrectAnswers.length; i++) {
                 var question = incorrectAnswers[i][1];
@@ -314,13 +328,10 @@
                 content += question + "\n" + correctAnswer + "\n";
             }
             if (content) {
-                var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
-                var link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "错题题库_" + formattedDate + ".txt");
-                link.click();
+                zip.file( "错题题库_" + formattedDate + ".txt", content);
             }
 
+            // 跳过的题
             content = "";
             for (var i = 0; i < jumpAnswers.length; i++) {
                 var question = jumpAnswers[i][1];
@@ -328,12 +339,46 @@
                 content += question + "\n" + correctAnswer + "\n";
             }
             if (content) {
-                var encodedUri = encodeURI("data:text/plain;charset=utf-8," + content);
-                var link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "跳过题目_" + formattedDate + ".txt");
-                link.click();
+                zip.file( "跳过题目_" + formattedDate + ".txt", content);
             }
+
+            // 超时的题
+            content = "";
+            for (var i = 0; i < jumpTimeoutQuestion.length; i++) {
+                var question = jumpTimeoutQuestion[i][0];
+                var correctAnswer = jumpTimeoutQuestion[i][1];
+                var userAnswer = jumpTimeoutQuestion[i][2];
+                content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
+            }
+            if (content) {
+                zip.file( "超时记录_" + formattedDate + ".txt", content);
+            }
+
+            content = "";
+            for (var i = 0; i < jumpTimeoutQuestion.length; i++) {
+                var question = jumpTimeoutQuestion[i][1];
+                var correctAnswer = jumpTimeoutQuestion[i][0];
+                content += question + "\n" + correctAnswer + "\n";
+            }
+            if (content) {
+                zip.file( "超时题库_" + formattedDate + ".txt", content);
+            }
+
+            content = "";
+            for (var i = 0; i < questions_bak.length; i++) {
+                var question = questions_bak[i].question;
+                var answer = questions_bak[i].answer;
+                var time = questions_bak[i]['time'] || 0;
+                content += question + "\n" + answer + "\n" + time + "\n";
+            }
+            if (content) {
+                zip.file( "答题耗时_" + formattedDate + ".txt", content);
+            }
+
+            zip.generateAsync({type:"blob"})
+                .then(function(content) {
+                    saveAs(content, "题目合集.zip");
+                });
         }
 
         let downTime = 0.1;
