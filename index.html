@@ -206,6 +206,8 @@
                     errorQuestion.add(q)
                 }
                 showErrorModal();
+                clearInterval(answerClock);
+                answerClock = undefined;
             }
         }
 
@@ -386,10 +388,9 @@
 
         let downTime = 0.1;
         let answerClock = undefined
-        function setClock(questionTime=60){
-            debugger;
+        function setClock(questionTime=60, fcore=false){
             const answerClockEle = document.querySelector("#answerClockEle")
-            if (answerClockEle.innerText === '(0.0)'){
+            if (answerClockEle.innerText === '(0.0)' || fcore){
                 answerClockEle.innerText = '(' + questionTime + ')';
             }
             answerClock = setInterval(()=>{
@@ -465,6 +466,10 @@
             modal.style.display = "none";
             document.getElementById("answer").value = "";
             document.getElementById("answer").focus()
+            if(document.querySelector("#starTime").checked){
+                var answer = questions[currentQuestionIndex].answer;
+                setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
+            }
         }
 
         function startTimeChange(target){
