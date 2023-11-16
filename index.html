@@ -126,375 +126,8 @@
     <script src="https://stupid1t.gitee.io/english/decimal.js"></script>
     <script src="https://stupid1t.gitee.io/english/jszip.min.js"></script>
     <script src="https://stupid1t.gitee.io/english/FileSaver.min.js"></script>
-    <script>
-        var ok = 0;
-        var error = 0;
-        var jump_num = 0;
-        var timeout = 0;
-        var questions = [];
-        var questions_bak = []
-        var currentQuestionIndex = 0;
-        var incorrectAnswers = [];
-        var jumpAnswers = [];
-
-        function showStep(step) {
-            var steps = document.getElementsByClassName("step");
-            for (var i = 0; i < steps.length; i++) {
-                steps[i].classList.remove("active");
-            }
-            steps[step - 1].classList.add("active");
-            document.getElementById("answer").focus()
-        }
-
-        function showQuestionContainer() {
-            document.getElementById("fileInputContainer").style.display = "none";
-            document.getElementById("questionContainer").style.display = "flex";
-            showStep(2);
-            displayQuestion(); // 添加这行代码
-        }
-
-        let start_time = undefined
-        function displayQuestion() {
-            delClock()
-            let now = new Date().getTime();
-            if (start_time){
-                let diff = new Decimal(now - start_time).div(1000).toNumber().toFixed(1, Decimal.ROUND_DOWN)
-                questions_bak[currentQuestionIndex - 1].time = diff;
-                start_time = now;
-            }else {
-                start_time = now;
-            }
-            if (currentQuestionIndex < questions.length) {
-                var question = questions[currentQuestionIndex].question;
-                var answer = questions[currentQuestionIndex].answer;
-                if(document.querySelector("#starTime").checked){
-                    setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN))
-                }
-                document.getElementById("question").textContent = question;
-                document.getElementById("answer").value = "";
-            } else {
-                showStep(3)
-                document.getElementById("question").textContent = "题目已完成，正确：" + ok + ", 错误：" + error + ", 跳过：" + jump_num + ", 超时：" + timeout;
-                document.getElementById("answer").style.display = "none";
-                document.getElementById("submitBtn").style.display = "none";
-                document.getElementById("jumpBtn").style.display = "none";
-                document.getElementById("againBtn").style.display = "block";
-                document.getElementById("againErrorBtn").style.display = "block";
-                document.getElementById("errorBtn").style.display = "block";
-            }
-        }
-
-        var errorQuestion = new Set()
-
-        function checkAnswer() {
-            var userAnswer = document.getElementById("answer").value.trim();
-            if (!userAnswer) {
-                alert("请填写答案")
-                document.querySelector("#incorrect").play();
-                return;
-            }
-            var correctAnswer = questions[currentQuestionIndex].answer.trim();
-            if (userAnswer === correctAnswer) {
-                currentQuestionIndex++;
-                ok++;
-                document.querySelector("#correct").play();
-                displayQuestion();
-            } else {
-                let q = questions[currentQuestionIndex].question
-                document.querySelector("#incorrect").play();
-                addErrorQues(q, correctAnswer, userAnswer)
-                showErrorModal();
-                clearInterval(answerClock);
-                answerClock = undefined;
-            }
-        }
-
-        var jumpQuestion = new Set()
-
-        function jump() {
-            document.querySelector("#correct").play();
-            let q = questions[currentQuestionIndex].question
-            var correctAnswer = questions[currentQuestionIndex].answer.trim();
-            if (!jumpQuestion.has(q)) {
-                jump_num++
-                jumpQuestion.add(q)
-                jumpAnswers.push([q, correctAnswer]);
-                // errorQuestion.add(q)
-            }
-            currentQuestionIndex++;
-            displayQuestion();
-        }
-
-        var jumpTimeoutQuestionSet = new Set();
-        var jumpTimeoutQuestion = []
-        function jumpTimeout() {
-            document.querySelector("#correct").play();
-            let q = questions[currentQuestionIndex].question
-            var correctAnswer = questions[currentQuestionIndex].answer.trim();
-            var userAnswer = document.getElementById("answer").value.trim();
-            if (!jumpTimeoutQuestionSet.has(q)) {
-                timeout++
-                jumpTimeoutQuestionSet.add(q)
-                jumpTimeoutQuestion.push([q, correctAnswer, userAnswer]);
-                addErrorQues(q, correctAnswer, userAnswer)
-            }
-            currentQuestionIndex++;
-            closeErrorModal()
-            displayQuestion();
-        }
-
-        function addErrorQues(q, correctAnswer, userAnswer){
-            if (!errorQuestion.has(q)){
-                error++
-                errorQuestion.add(q)
-                incorrectAnswers.push([q, correctAnswer, userAnswer]);
-            }
-        }
-
-        function showErrorModal() {
-            var modal = document.getElementById("errorModal");
-            var modalBody = document.getElementById("errorModalBody");
-            var closeButton = document.getElementById("errorModalCloseButton");
-            modalBody.innerHTML = `
-             <div><span style="color: green;background: #ececec">${questions[currentQuestionIndex].answer}</span></div><br/>
-             <div><span style="background: #ececec">${compareStrings(questions[currentQuestionIndex].answer, document.getElementById("answer").value.trim())}</span></div>
-            `
-            modal.style.display = "block";
-            document.getElementById("errorBtnKnow").focus()
-        }
-
-        function handleFileSelect(event) {
-            var file = event.target.files[0];
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                var contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
-                var lines = contents.split("\n");
-                for (var i = 0; i < lines.length; i += 2) {
-                    try {
-                        var question = lines[i + 1].trim();
-                        var answer = lines[i].trim();
-                        questions.push({question: question, answer: answer});
-                    } catch (e) {
-
-                    }
-                }
-                questions_bak = questions;
-                showQuestionContainer();
-            };
-            reader.readAsText(file);
-        }
-
-        function againAnswers(flag) {
-            currentQuestionIndex = 0
-            ok = 0
-            error = 0
-            jump_num = 0
-            timeout = 0
-            start_time = undefined
-            document.getElementById("answer").style.display = "inline";
-            document.getElementById("submitBtn").style.display = "inline";
-            document.getElementById("jumpBtn").style.display = "inline";
-            document.getElementById("againBtn").style.display = "none";
-            document.getElementById("againErrorBtn").style.display = "none";
-            document.getElementById("errorBtn").style.display = "none";
-            if (flag) {
-                questions = []
-                for (q of incorrectAnswers) {
-                    questions.push({question: q[0], answer: q[1]});
-                }
-            } else {
-                questions = questions_bak;
-            }
-            showQuestionContainer()
-        }
-
-        function replaceNonAlphanumeric(event) {
-            var input = event.target;
-            var inputValue = input.value;
-            var replacedValue = inputValue.replace(/[^ \-a-zA-Z0-9.,?!/='"><$&*()~`@#%^_+{}\[\]:;、\\]/g, '');
-            input.value = replacedValue;
-        }
-
-
-        function exportIncorrectAnswers() {
-            var zip = new JSZip();
-            document.querySelector("#correct").play();
-            // 获取当前日期
-            var currentDate = new Date();
-            var formattedDate = currentDate.toISOString().split('T')[0];
-
-            // 错题记录
-            var content = "";
-            for (var i = 0; i < incorrectAnswers.length; i++) {
-                var question = incorrectAnswers[i][0];
-                var correctAnswer = incorrectAnswers[i][1];
-                var userAnswer = incorrectAnswers[i][2];
-                content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
-            }
-            if (content) {
-                zip.file( "错题记录_" + formattedDate + ".txt", content);
-            }
-
-
-            // 错误的题
-            content = "";
-            for (var i = 0; i < incorrectAnswers.length; i++) {
-                var question = incorrectAnswers[i][1];
-                var correctAnswer = incorrectAnswers[i][0];
-                content += question + "\n" + correctAnswer + "\n";
-            }
-            if (content) {
-                zip.file( "错题题库_" + formattedDate + ".txt", content);
-            }
-
-            // 跳过的题
-            content = "";
-            for (var i = 0; i < jumpAnswers.length; i++) {
-                var question = jumpAnswers[i][1];
-                var correctAnswer = jumpAnswers[i][0];
-                content += question + "\n" + correctAnswer + "\n";
-            }
-            if (content) {
-                zip.file( "跳过题库_" + formattedDate + ".txt", content);
-            }
-
-            // 超时的题
-            content = "";
-            for (var i = 0; i < jumpTimeoutQuestion.length; i++) {
-                var question = jumpTimeoutQuestion[i][0];
-                var correctAnswer = jumpTimeoutQuestion[i][1];
-                var userAnswer = jumpTimeoutQuestion[i][2];
-                content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
-            }
-            if (content) {
-                zip.file( "超时记录_" + formattedDate + ".txt", content);
-            }
-
-            content = "";
-            for (var i = 0; i < jumpTimeoutQuestion.length; i++) {
-                var question = jumpTimeoutQuestion[i][1];
-                var correctAnswer = jumpTimeoutQuestion[i][0];
-                content += question + "\n" + correctAnswer + "\n";
-            }
-            if (content) {
-                zip.file( "超时题库_" + formattedDate + ".txt", content);
-            }
-
-            content = "";
-            for (var i = 0; i < questions_bak.length; i++) {
-                var question = questions_bak[i].question;
-                var answer = questions_bak[i].answer;
-                var time = questions_bak[i]['time'] || 0;
-                content += question + "\n" + answer + "\n" + time + "\n";
-            }
-            if (content) {
-                zip.file( "耗时记录_" + formattedDate + ".txt", content);
-            }
-
-            zip.generateAsync({type:"blob"})
-                .then(function(content) {
-                    saveAs(content, "题目合集.zip");
-                });
-        }
-
-        let downTime = 0.1;
-        let answerClock = undefined
-        function setClock(questionTime=60, fcore=false){
-            const answerClockEle = document.querySelector("#answerClockEle")
-            if (answerClockEle.innerText === '(0.0)' || fcore){
-                answerClockEle.innerText = '(' + questionTime + ')';
-            }
-            answerClock = setInterval(()=>{
-                let val = document.querySelector("#answerClockEle").innerText.replace(/[\(\)]/g,'')
-                if(parseFloat(val) > 0){
-                    val = new Decimal(val).sub(downTime).toNumber().toFixed(1, Decimal.ROUND_DOWN);
-                    document.querySelector("#answerClockEle").innerText = '(' + val + ')'
-                }else{
-                    delClock()
-                    // 题目结束，下一题
-                    jumpTimeout()
-                }
-            }, downTime * 1000)
-        }
-
-        function delClock(){
-            if (answerClock != undefined){
-                document.querySelector("#answerClockEle").innerText = '(0.0)'
-                clearInterval(answerClock);
-                answerClock = undefined;
-            }
-        }
-
-
-        function checkEnter(event) {
-            if (event.keyCode === 13 && document.querySelector("#nextQuest").checked) {
-                event.preventDefault();
-                checkAnswer();
-            }
-        }
-
-        function compareStrings(stringA, stringB) {
-            var result = '';
-            for (var i = 0; i < stringB.length; i++) {
-                let aChar = stringA[i]
-                let bChar = stringB[i]
-                if (aChar !== undefined && bChar !== undefined) {
-                    if (stringA[i] !== bChar) {
-                        if (bChar === ' ') {
-                            bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
-                        }
-                        result += '<span class="different">' + bChar + '</span>';
-                    } else {
-                        result += bChar;
-                    }
-                } else if (aChar == undefined && bChar !== undefined) {
-                    if (bChar === ' ') {
-                        bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
-                    }
-                    result += '<span class="different">' + bChar + '</span>';
-                } else if (aChar !== undefined && bChar == undefined) {
-                    if (bChar === ' ') {
-                        bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
-                    }
-                    result += '<span class="different">' + bChar + '</span>';
-                }
-            }
-            return result;
-        }
-
-        // 监听键盘按下事件
-        document.addEventListener('keydown', function(event) {
-            document.querySelector("#btnKeyPress").play();
-        });
-
-        function readWord(){
-            var correctAnswer = questions[currentQuestionIndex].answer.trim();
-            new Audio(`https://dict.youdao.com/dictvoice?audio=${correctAnswer}&type=2`).play();
-        }
-
-        function closeErrorModal() {
-            var modal = document.getElementById("errorModal");
-            modal.style.display = "none";
-            document.getElementById("answer").value = "";
-            document.getElementById("answer").focus()
-            if(document.querySelector("#starTime").checked){
-                if(questions[currentQuestionIndex]){
-                    var answer = questions[currentQuestionIndex].answer;
-                    setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
-                }
-            }
-        }
-
-        function startTimeChange(target){
-            if(target.checked){
-                document.querySelector("#answerClockEle").style = "display:inline";
-                document.querySelector('#interval').style = 'display:inline';
-            }else {
-                document.querySelector("#answerClockEle").style = "display:none";
-                document.querySelector('#interval').style = 'display:none';
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="https://stupid1t.gitee.io/english/sweetalert2.min.css">
+    <script src="https://stupid1t.gitee.io/english/sweetalert2.all.min.js"></script>
 </head>
 <body>
 <audio id="btnKeyPress" src="./press.wav"></audio>
@@ -525,7 +158,7 @@
     </div>
 </div>
 <div id="questionContainer">
-    <div><div id="question"></div><span style="display: none"><svg onclick="readWord()" style="width: 40px;height: 40px; cursor: pointer; z-index: 9999" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span></div>
+    <div><div id="question"></div><span ><svg onclick="readWord()" style="width: 40px;height: 40px; cursor: pointer; z-index: 9999" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span></div>
     <div>
         <textarea id="answer" oninput="replaceNonAlphanumeric(event)" placeholder="请输入答案" rows="5"
                   onkeypress="checkEnter(event)"></textarea>
@@ -555,5 +188,389 @@
         </div>
     </div>
 </div>
+<script>
+    var ok = 0;
+    var error = 0;
+    var jump_num = 0;
+    var timeout = 0;
+    var questions = [];
+    var questions_bak = []
+    var currentQuestionIndex = 0;
+    var incorrectAnswers = [];
+    var jumpAnswers = [];
+
+    function showStep(step) {
+        var steps = document.getElementsByClassName("step");
+        for (var i = 0; i < steps.length; i++) {
+            steps[i].classList.remove("active");
+        }
+        steps[step - 1].classList.add("active");
+        document.getElementById("answer").focus()
+    }
+
+    function showQuestionContainer() {
+        document.getElementById("fileInputContainer").style.display = "none";
+        document.getElementById("questionContainer").style.display = "flex";
+        showStep(2);
+        displayQuestion(); // 添加这行代码
+    }
+
+    let start_time = undefined
+    function displayQuestion() {
+        delClock()
+        let now = new Date().getTime();
+        if (start_time){
+            let diff = new Decimal(now - start_time).div(1000).toNumber().toFixed(1, Decimal.ROUND_DOWN)
+            questions_bak[currentQuestionIndex - 1].time = diff;
+            start_time = now;
+        }else {
+            start_time = now;
+        }
+        if (currentQuestionIndex < questions.length) {
+            var question = questions[currentQuestionIndex].question;
+            var answer = questions[currentQuestionIndex].answer;
+            if(document.querySelector("#starTime").checked){
+                setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN))
+            }
+            document.getElementById("question").textContent = question;
+            document.getElementById("answer").value = "";
+        } else {
+            showStep(3)
+            document.getElementById("question").textContent = "题目已完成，正确：" + ok + ", 错误：" + error + ", 跳过：" + jump_num + ", 超时：" + timeout;
+            document.getElementById("answer").style.display = "none";
+            document.getElementById("submitBtn").style.display = "none";
+            document.getElementById("jumpBtn").style.display = "none";
+            document.getElementById("againBtn").style.display = "block";
+            document.getElementById("againErrorBtn").style.display = "block";
+            document.getElementById("errorBtn").style.display = "block";
+        }
+    }
+
+    var errorQuestion = new Set()
+
+    function checkAnswer() {
+        var userAnswer = document.getElementById("answer").value.trim();
+        if (!userAnswer) {
+            Swal.fire('请填写答案!');
+            document.querySelector("#incorrect").play();
+            return;
+        }
+        var correctAnswer = questions[currentQuestionIndex].answer.trim();
+        if (userAnswer === correctAnswer) {
+            currentQuestionIndex++;
+            ok++;
+            document.querySelector("#correct").play();
+            displayQuestion();
+        } else {
+            let q = questions[currentQuestionIndex].question
+            document.querySelector("#incorrect").play();
+            addErrorQues(q, correctAnswer, userAnswer)
+            showErrorModal();
+            clearInterval(answerClock);
+            answerClock = undefined;
+        }
+    }
+
+    var jumpQuestion = new Set()
+
+    function jump() {
+        document.querySelector("#correct").play();
+        let q = questions[currentQuestionIndex].question
+        var correctAnswer = questions[currentQuestionIndex].answer.trim();
+        if (!jumpQuestion.has(q)) {
+            jump_num++
+            jumpQuestion.add(q)
+            jumpAnswers.push([q, correctAnswer]);
+            // errorQuestion.add(q)
+        }
+        currentQuestionIndex++;
+        displayQuestion();
+    }
+
+    var jumpTimeoutQuestionSet = new Set();
+    var jumpTimeoutQuestion = []
+    var stopClock = false;
+    function jumpTimeout() {
+        document.querySelector("#correct").play();
+        let q = questions[currentQuestionIndex].question
+        var correctAnswer = questions[currentQuestionIndex].answer.trim();
+        stopClock = true;
+        Swal.fire({
+            title: '回答超时',
+            text: correctAnswer,
+            //icon: 'error',
+            confirmButtonColor: '#FF0000',
+            confirmButtonText: '知道了'
+        }).then((result)=>{
+            stopClock = false;
+            showErrorModal()
+            var userAnswer = document.getElementById("answer").value.trim();
+            if (!jumpTimeoutQuestionSet.has(q)) {
+                timeout++
+                jumpTimeoutQuestionSet.add(q)
+                jumpTimeoutQuestion.push([q, correctAnswer, userAnswer]);
+                addErrorQues(q, correctAnswer, userAnswer)
+            }
+            currentQuestionIndex++;
+            closeErrorModal()
+            displayQuestion();
+        })
+    }
+
+    function addErrorQues(q, correctAnswer, userAnswer){
+        if (!errorQuestion.has(q)){
+            error++
+            errorQuestion.add(q)
+            incorrectAnswers.push([q, correctAnswer, userAnswer]);
+        }
+    }
+
+    function showErrorModal() {
+        var modal = document.getElementById("errorModal");
+        var modalBody = document.getElementById("errorModalBody");
+        var closeButton = document.getElementById("errorModalCloseButton");
+        modalBody.innerHTML = `
+             <div><span style="color: green;background: #ececec">${questions[currentQuestionIndex].answer}</span></div><br/>
+             <div><span style="background: #ececec">${compareStrings(questions[currentQuestionIndex].answer, document.getElementById("answer").value.trim())}</span></div>
+            `
+        modal.style.display = "block";
+        document.getElementById("errorBtnKnow").focus()
+    }
+
+    function handleFileSelect(event) {
+        var file = event.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
+            var lines = contents.split("\n");
+            for (var i = 0; i < lines.length; i += 2) {
+                try {
+                    var question = lines[i + 1].trim();
+                    var answer = lines[i].trim();
+                    questions.push({question: question, answer: answer});
+                } catch (e) {
+
+                }
+            }
+            questions_bak = questions;
+            showQuestionContainer();
+        };
+        reader.readAsText(file);
+    }
+
+    function againAnswers(flag) {
+        currentQuestionIndex = 0
+        ok = 0
+        error = 0
+        jump_num = 0
+        timeout = 0
+        start_time = undefined
+        document.getElementById("answer").style.display = "inline";
+        document.getElementById("submitBtn").style.display = "inline";
+        document.getElementById("jumpBtn").style.display = "inline";
+        document.getElementById("againBtn").style.display = "none";
+        document.getElementById("againErrorBtn").style.display = "none";
+        document.getElementById("errorBtn").style.display = "none";
+        if (flag) {
+            questions = []
+            for (q of incorrectAnswers) {
+                questions.push({question: q[0], answer: q[1]});
+            }
+        } else {
+            questions = questions_bak;
+        }
+        showQuestionContainer()
+    }
+
+    function replaceNonAlphanumeric(event) {
+        var input = event.target;
+        var inputValue = input.value;
+        var replacedValue = inputValue.replace(/[^ \-a-zA-Z0-9.,?!/='"><$&*()~`@#%^_+{}\[\]:;、\\]/g, '');
+        input.value = replacedValue;
+    }
+
+
+    function exportIncorrectAnswers() {
+        var zip = new JSZip();
+        document.querySelector("#correct").play();
+        // 获取当前日期
+        var currentDate = new Date();
+        var formattedDate = currentDate.toISOString().split('T')[0];
+
+        // 错题记录
+        var content = "";
+        for (var i = 0; i < incorrectAnswers.length; i++) {
+            var question = incorrectAnswers[i][0];
+            var correctAnswer = incorrectAnswers[i][1];
+            var userAnswer = incorrectAnswers[i][2];
+            content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
+        }
+        if (content) {
+            zip.file( "错题记录_" + formattedDate + ".txt", content);
+        }
+
+
+        // 错误的题
+        content = "";
+        for (var i = 0; i < incorrectAnswers.length; i++) {
+            var question = incorrectAnswers[i][1];
+            var correctAnswer = incorrectAnswers[i][0];
+            content += question + "\n" + correctAnswer + "\n";
+        }
+        if (content) {
+            zip.file( "错题题库_" + formattedDate + ".txt", content);
+        }
+
+        // 跳过的题
+        content = "";
+        for (var i = 0; i < jumpAnswers.length; i++) {
+            var question = jumpAnswers[i][1];
+            var correctAnswer = jumpAnswers[i][0];
+            content += question + "\n" + correctAnswer + "\n";
+        }
+        if (content) {
+            zip.file( "跳过题库_" + formattedDate + ".txt", content);
+        }
+
+        // 超时的题
+        content = "";
+        for (var i = 0; i < jumpTimeoutQuestion.length; i++) {
+            var question = jumpTimeoutQuestion[i][0];
+            var correctAnswer = jumpTimeoutQuestion[i][1];
+            var userAnswer = jumpTimeoutQuestion[i][2];
+            content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
+        }
+        if (content) {
+            zip.file( "超时记录_" + formattedDate + ".txt", content);
+        }
+
+        content = "";
+        for (var i = 0; i < jumpTimeoutQuestion.length; i++) {
+            var question = jumpTimeoutQuestion[i][1];
+            var correctAnswer = jumpTimeoutQuestion[i][0];
+            content += question + "\n" + correctAnswer + "\n";
+        }
+        if (content) {
+            zip.file( "超时题库_" + formattedDate + ".txt", content);
+        }
+
+        content = "";
+        for (var i = 0; i < questions_bak.length; i++) {
+            var question = questions_bak[i].question;
+            var answer = questions_bak[i].answer;
+            var time = questions_bak[i]['time'] || 0;
+            content += question + "\n" + answer + "\n" + time + "\n";
+        }
+        if (content) {
+            zip.file( "耗时记录_" + formattedDate + ".txt", content);
+        }
+
+        zip.generateAsync({type:"blob"})
+            .then(function(content) {
+                saveAs(content, "题目合集.zip");
+            });
+    }
+
+    let downTime = 0.1;
+    let answerClock = undefined
+    function setClock(questionTime=60, fcore=false){
+        const answerClockEle = document.querySelector("#answerClockEle")
+        if (answerClockEle.innerText === '(0.0)' || fcore){
+            answerClockEle.innerText = '(' + questionTime + ')';
+        }
+        answerClock = setInterval(()=>{
+            if(stopClock){
+                return
+            }
+            let val = document.querySelector("#answerClockEle").innerText.replace(/[\(\)]/g,'')
+            if(parseFloat(val) > 0){
+                val = new Decimal(val).sub(downTime).toNumber().toFixed(1, Decimal.ROUND_DOWN);
+                document.querySelector("#answerClockEle").innerText = '(' + val + ')'
+            }else{
+                delClock()
+                // 题目结束，下一题
+                jumpTimeout()
+            }
+        }, downTime * 1000)
+    }
+
+    function delClock(){
+        if (answerClock != undefined){
+            document.querySelector("#answerClockEle").innerText = '(0.0)'
+            clearInterval(answerClock);
+            answerClock = undefined;
+        }
+    }
+
+
+    function checkEnter(event) {
+        if (event.keyCode === 13 && document.querySelector("#nextQuest").checked) {
+            event.preventDefault();
+            checkAnswer();
+        }
+    }
+
+    function compareStrings(stringA, stringB) {
+        var result = '';
+        for (var i = 0; i < stringB.length; i++) {
+            let aChar = stringA[i]
+            let bChar = stringB[i]
+            if (aChar !== undefined && bChar !== undefined) {
+                if (stringA[i] !== bChar) {
+                    if (bChar === ' ') {
+                        bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
+                    }
+                    result += '<span class="different">' + bChar + '</span>';
+                } else {
+                    result += bChar;
+                }
+            } else if (aChar == undefined && bChar !== undefined) {
+                if (bChar === ' ') {
+                    bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
+                }
+                result += '<span class="different">' + bChar + '</span>';
+            } else if (aChar !== undefined && bChar == undefined) {
+                if (bChar === ' ') {
+                    bChar = '<em style="background: #e07676">&nbsp;&nbsp;</em>'
+                }
+                result += '<span class="different">' + bChar + '</span>';
+            }
+        }
+        return result;
+    }
+
+    // 监听键盘按下事件
+    document.addEventListener('keydown', function(event) {
+        document.querySelector("#btnKeyPress").play();
+    });
+
+    function readWord(){
+        var correctAnswer = questions[currentQuestionIndex].answer.trim();
+        new Audio(`https://dict.youdao.com/dictvoice?audio=${correctAnswer}&type=2`).play();
+    }
+
+    function closeErrorModal() {
+        var modal = document.getElementById("errorModal");
+        modal.style.display = "none";
+        document.getElementById("answer").value = "";
+        document.getElementById("answer").focus()
+        if(document.querySelector("#starTime").checked){
+            if(questions[currentQuestionIndex]){
+                var answer = questions[currentQuestionIndex].answer;
+                setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
+            }
+        }
+    }
+
+    function startTimeChange(target){
+        if(target.checked){
+            document.querySelector("#answerClockEle").style = "display:inline";
+            document.querySelector('#interval').style = 'display:inline';
+        }else {
+            document.querySelector("#answerClockEle").style = "display:none";
+            document.querySelector('#interval').style = 'display:none';
+        }
+    }
+</script>
 </body>
 </html>
