@@ -319,17 +319,16 @@
     }
 
     function addJumpQues(q, correctAnswer, userAnswer){
+        jump_num++
         if (!jumpQuestion.has(q)) {
-            jump_num++
             jumpQuestion.add(q)
             jumpAnswers.push([q, correctAnswer]);
-            // errorQuestion.add(q)
         }
     }
 
     function addJumpTimeoutQues(q, correctAnswer, userAnswer){
+        timeout++
         if (!jumpTimeoutQuestionSet.has(q)) {
-            timeout++
             jumpTimeoutQuestionSet.add(q)
             jumpTimeoutQuestion.push([q, correctAnswer, userAnswer]);
         }
