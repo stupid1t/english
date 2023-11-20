@@ -197,6 +197,7 @@
     var questions_bak = []
     var currentQuestionIndex = 0;
     var incorrectAnswers = [];
+    var incorrectAnswersLast = [];
     var jumpAnswers = [];
 
     function showStep(step) {
@@ -247,6 +248,7 @@
     }
 
     var errorQuestion = new Set()
+    var errorQuestionLast = new Set()
 
     function checkAnswer() {
         var userAnswer = document.getElementById("answer").value.trim();
@@ -335,9 +337,13 @@
 
     function addErrorQues(q, correctAnswer, userAnswer){
         if (!errorQuestion.has(q)){
-            error++
             errorQuestion.add(q)
             incorrectAnswers.push([q, correctAnswer, userAnswer]);
+        }
+        if (!errorQuestionLast.has(q)){
+            error++
+            errorQuestionLast.add(q)
+            incorrectAnswersLast.push([q, correctAnswer, userAnswer]);
         }
     }
 
@@ -389,9 +395,11 @@
         document.getElementById("errorBtn").style.display = "none";
         if (flag) {
             questions = []
-            for (q of incorrectAnswers) {
+            for (q of incorrectAnswersLast) {
                 questions.push({question: q[0], answer: q[1]});
             }
+            errorQuestionLast.clear()
+            incorrectAnswersLast = []
         } else {
             questions = questions_bak;
         }
