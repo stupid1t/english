@@ -335,6 +335,10 @@
             errorQuestionLast.add(q)
             incorrectAnswersLast.push([q, correctAnswer, userAnswer]);
         }
+        if (!errorQuestion.has(q)){
+            errorQuestion.add(q)
+            incorrectAnswers.push([q, correctAnswer, userAnswer]);
+        }
     }
 
     function addErrorQues(q, correctAnswer, userAnswer){
