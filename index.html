@@ -135,7 +135,7 @@
 <audio id="incorrect" src="./error.wav"></audio>
 <div id="stepContainer">
     <div class="step active">1</div>
-    <font style="font-size:36px">选择题目</font>&nbsp;&nbsp;
+    <font style="font-size:36px">选择题目(<span id="questionTotal">0</span>)</font>&nbsp;&nbsp;
     <div class="step">2</div>
     <font style="font-size:36px">答题<span id="answerClockEle" style="display: none">(0.0)</span></font>&nbsp;&nbsp;
     <div class="step">3</div>
@@ -153,8 +153,10 @@
         <input id="nextQuest" type="checkbox" name="nextQuest"  checked/>
     </div>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <div>
-        <input type="file" id="fileInput" accept=".txt" onchange="handleFileSelect(event)"/>
+    <div style="display:flex">
+        <input type="file" id="fileInput" style="display: none" accept=".txt" onchange="handleFileSelect(event)"/>
+        <button id="goAnswerBtn" style="display: none" onclick="showQuestionContainer()">去答题</button>
+        <button id="clearBtn" style="display: none" onclick="clearQuestion()">清空导入</button>
     </div>
 </div>
 <div id="questionContainer">
@@ -199,6 +201,7 @@
     var incorrectAnswers = [];
     var incorrectAnswersLast = [];
     var jumpAnswers = [];
+    var everyNum = 10;
 
     function showStep(step) {
         var steps = document.getElementsByClassName("step");
@@ -244,6 +247,11 @@
             document.getElementById("againBtn").style.display = "block";
             document.getElementById("againErrorBtn").style.display = "block";
             document.getElementById("errorBtn").style.display = "block";
+
+            // 完成一轮答题，删除前10个题目
+            let q_old = getLocalStorageItem("question")
+            q_old.splice(0, everyNum);
+            setLocalStorageItem("question", q_old)
         }
     }
 
@@ -365,9 +373,15 @@
         document.getElementById("errorBtnKnow").focus()
     }
 
+    function clearQuestion(){
+        removeLocalStorageItem("questions");
+        window.location.reload();
+    }
+
     function handleFileSelect(event) {
         var file = event.target.files[0];
         var reader = new FileReader();
+        var questions_now = []
         reader.onload = function (e) {
             var contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
             var lines = contents.split("\n");
@@ -375,13 +389,18 @@
                 try {
                     var question = lines[i + 1].trim();
                     var answer = lines[i].trim();
-                    questions.push({question: question, answer: answer});
+                    questions_now.push({question: question, answer: answer});
                 } catch (e) {
 
                 }
             }
+            setLocalStorageItem("questions", questions_now)
+            questions = questions_now.slice(0 , everyNum)
             questions_bak = questions;
-            showQuestionContainer();
+            document.querySelector("#fileInput").style.display = "none";
+            document.querySelector("#clearBtn").style.display = "block";
+            document.querySelector("#goAnswerBtn").style.display = "block";
+            document.querySelector("#questionTotal").innerText = `${questions_bak.length} / ${questions_now.length + questions_bak.length}`
         };
         reader.readAsText(file);
     }
@@ -601,6 +620,41 @@
             document.querySelector('#interval').style = 'display:none';
         }
     }
+
+    // 将数据存储到 localStorage
+    function setLocalStorageItem(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    // 从 localStorage 中获取数据
+    function getLocalStorageItem(key) {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : null;
+    }
+
+    // 从 localStorage 中移除数据
+    function removeLocalStorageItem(key) {
+        localStorage.removeItem(key);
+    }
+
+    /**
+     * 加载历史题库
+     */
+    window.onload = function() {
+         let questions_store = getLocalStorageItem("questions")
+        if(questions_store){
+            document.querySelector("#fileInput").style.display = "none";
+            document.querySelector("#clearBtn").style.display = "block";
+            document.querySelector("#goAnswerBtn").style.display = "block";
+            questions = questions_store.splice(0, everyNum)
+            questions_bak = questions;
+            document.querySelector("#questionTotal").innerText = `${questions_bak.length} / ${questions_store.length + questions_bak.length}`
+        }else{
+            document.querySelector("#fileInput").style.display = "block";
+            document.querySelector("#clearBtn").style.display = "none";
+            document.querySelector("#goAnswerBtn").style.display = "none";
+        }
+    };
 </script>
 </body>
 </html>
