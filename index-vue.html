@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>单词记忆</title>
+    <meta charset="UTF-8">
+    <style>
+        #stepContainer {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: gray;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 40px;
+        }
+
+        .active {
+            background-color: green;
+        }
+
+        #fileInputContainer {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #questionContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #question {
+            display: inline;
+            margin-right: 10px;
+            font-size: 80px;
+            margin-bottom: 10px;
+        }
+
+        #answer {
+            width: 600px;
+            #height: 40px;
+            font-size: 90px;
+            margin-bottom: -5px;
+        }
+
+        #result {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 600px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0px;
+            color: red
+        }
+
+        .modal-body {
+            margin-bottom: 10px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-footer button {
+            margin-left: 10px;
+        }
+
+        #question {
+            font-size: 50px;
+        }
+
+        button {
+            height: 40px;
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        #errorModalBody {
+            font-size: 30px;
+        }
+
+        .different {
+            color: red;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="./decimal.js"></script>
+    <script src="./jszip.min.js"></script>
+    <script src="./FileSaver.min.js"></script>
+    <link rel="stylesheet" href="./sweetalert2.min.css">
+    <script src="./sweetalert2.all.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <audio id="btnKeyPress" src="./press.wav"></audio>
+    <audio id="correct" src="./correct.wav"></audio>
+    <audio id="incorrect" src="./error.wav"></audio>
+    <div id="stepContainer">
+        <div class="step" :class="{active: currentStep === 1}">1</div>
+        <font style="font-size:36px">选择题目</font>&nbsp;&nbsp;
+        <div class="step" :class="{active: currentStep === 2}">2</div>
+        <font style="font-size:36px">答题<span v-if="showTimer" id="answerClockEle">({{ timer }})</span></font>&nbsp;&nbsp;
+        <div class="step" :class="{active: currentStep === 3}">3</div>
+        <font style="font-size:36px">完成</font>
+    </div>
+    <div id="fileInputContainer" v-if="currentStep === 1">
+        <div>
+            <label for="starTime">计时</label>
+            <input id="starTime" type="checkbox" v-model="timingEnabled" @change="toggleTimer"/>
+            <input v-if="timingEnabled" type="number" v-model="interval" step="0.1" placeholder="单个字母的耗时（秒）"/>
+        </div>
+        <div>
+            <label for="nextQuest">回车下一题</label>
+            <input id="nextQuest" type="checkbox" v-model="enterToNext"/>
+        </div>
+        <div>
+            <input type="file" @change="handleFileSelect"/>
+        </div>
+    </div>
+    <div id="questionContainer" v-if="currentStep === 2">
+        <div>
+            <div id="question">{{ currentQuestion.question }}</div>
+            <span>
+                <svg @click="readWord" style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
+                     viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                    <path d="..."></path>
+                </svg>
+            </span>
+        </div>
+        <div>
+            <textarea v-model="userAnswer" @input="replaceNonAlphanumeric" @keypress="checkEnter"
+                      placeholder="请输入答案" rows="5"></textarea>
+            <div style="margin: 10px; text-align: center">
+                <button @click="checkAnswer">下一题</button>
+                <button @click="jump">跳过</button>
+            </div>
+        </div>
+        <div style="display:flex">
+            <button v-if="showAgain" @click="againAnswers(false)">再来一次</button>
+            <button v-if="showAgainError" @click="againAnswers(true)">练习错误/超时题目</button>
+            <button v-if="showExport" @click="exportIncorrectAnswers">导出题库/记录</button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div v-if="showErrorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">回答错误</h5>
+            </div>
+            <div class="modal-body" id="errorModalBody">
+                <div><span style="color: green;background: #ececec">{{ currentQuestion.answer }}</span></div>
+                <br/>
+                <div><span style="background: #ececec" v-html="comparedAnswer"></span></div>
+            </div>
+            <div class="modal-footer">
+                <button @click="closeErrorModal">我知道了</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            currentStep: 1,
+            questions: [],
+            currentQuestionIndex: 0,
+            userAnswer: '',
+            timingEnabled: false,
+            interval: 1.0,
+            enterToNext: true,
+            showErrorModal: false,
+            timer: 0.0,
+            showTimer: false,
+            showAgain: false,
+            showAgainError: false,
+            showExport: false,
+            incorrectAnswers: [],
+            answerClock: undefined,
+            start_time: 0,
+            questions_bak: [],
+        },
+        computed: {
+            currentQuestion() {
+                return this.questions[this.currentQuestionIndex] || {question: '', answer: ''};
+            },
+            comparedAnswer() {
+                return this.compareStrings(this.currentQuestion.answer, this.userAnswer);
+            }
+        },
+        methods: {
+            setClock(questionTime=60, fcore=false){
+                const answerClockEle = document.querySelector("#answerClockEle")
+                if (answerClockEle.innerText === '(0.0)' || fcore){
+                    answerClockEle.innerText = '(' + questionTime + ')';
+                }
+                answerClock = setInterval(()=>{
+                    if(stopClock){
+                        return
+                    }
+                    let val = document.querySelector("#answerClockEle").innerText.replace(/[\(\)]/g,'')
+                    if(parseFloat(val) > 0){
+                        val = new Decimal(val).sub(downTime).toNumber().toFixed(1, Decimal.ROUND_DOWN);
+                        document.querySelector("#answerClockEle").innerText = '(' + val + ')'
+                    }else{
+                        delClock()
+                        // 题目结束，下一题
+                        jumpTimeout()
+                    }
+                }, downTime * 1000)
+            },
+            delClock() {
+                if (this.answerClock != undefined) {
+                    this.timer = 0.0
+                    clearInterval(this.answerClock);
+                    this.answerClock = undefined;
+                }
+            },
+            displayQuestion() {
+                this.delClock()
+                let now = new Date().getTime();
+                if (this.start_time) {
+                    let diff = new Decimal(now - this.start_time).div(1000).toNumber().toFixed(1, Decimal.ROUND_DOWN)
+                    this.questions_bak[this.currentQuestionIndex - 1].time = diff;
+                    this.start_time = now;
+                } else {
+                    this.start_time = now;
+                }
+                if (this.currentQuestionIndex < this.questions.length) {
+                    var question = this.questions[this.currentQuestionIndex].question;
+                    var answer = this.questions[this.currentQuestionIndex].answer;
+                    if (this.timingEnabled) {
+                        this.setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(this.value).toNumber().toFixed(1, Decimal.ROUND_DOWN))
+                    }
+                    this.userAnswer = "";
+                } else {
+                    document.getElementById("question").textContent = "题目已完成，正确：" + this.ok + ", 错误：" + this.error + ", 跳过：" + this.jump_num + ", 超时：" + this.timeout;
+                    document.getElementById("answer").style.display = "none";
+                    document.getElementById("submitBtn").style.display = "none";
+                    document.getElementById("jumpBtn").style.display = "none";
+                    document.getElementById("againBtn").style.display = "block";
+                    document.getElementById("againErrorBtn").style.display = "block";
+                    document.getElementById("errorBtn").style.display = "block";
+                }
+            },
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
+                    const lines = contents.split("\n");
+                    for (let i = 0; i < lines.length; i += 2) {
+                        const question = lines[i + 1]?.trim();
+                        const answer = lines[i]?.trim();
+                        if (question && answer) {
+                            this.questions.push({question, answer});
+                        }
+                    }
+                    this.currentStep = 2
+                    this.displayQuestion()
+                };
+                reader.readAsText(file);
+            },
+            checkAnswer() {
+                if (this.userAnswer.trim() === this.currentQuestion.answer.trim()) {
+                    this.currentQuestionIndex++;
+                    if (this.currentQuestionIndex >= this.questions.length) {
+                        this.currentStep = 3;
+                        this.showAgain = true;
+                        this.showAgainError = true;
+                        this.showExport = true;
+                    }
+                } else {
+                    this.showErrorModal = true;
+                }
+            },
+            jump() {
+                this.currentQuestionIndex++;
+                if (this.currentQuestionIndex >= this.questions.length) {
+                    this.currentStep = 3;
+                    this.showAgain = true;
+                    this.showAgainError = true;
+                    this.showExport = true;
+                }
+            },
+            replaceNonAlphanumeric(event) {
+                this.userAnswer = this.userAnswer.replace(/[^ \-a-zA-Z0-9.,?!/='"><{{input}}*()~`@#%^_+{}\[\]:;、\\]/g, '');
+            },
+            checkEnter(event) {
+                if (event.key === 'Enter' && this.enterToNext) {
+                    event.preventDefault();
+                    this.checkAnswer();
+                }
+            },
+            compareStrings(stringA, stringB) {
+                let result = '';
+                for (let i = 0; i < stringB.length; i++) {
+                    const aChar = stringA[i];
+                    const bChar = stringB[i];
+                    if (aChar !== bChar) {
+                        result += `<span class="different">${bChar}</span>`;
+                    } else {
+                        result += bChar;
+                    }
+                }
+                return result;
+            },
+            closeErrorModal() {
+                this.showErrorModal = false;
+                this.userAnswer = '';
+            },
+            readWord() {
+                const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${this.currentQuestion.answer}&type=2`);
+                audio.play();
+            },
+            toggleTimer() {
+                this.showTimer = this.timingEnabled;
+            },
+            againAnswers(flag) {
+                this.currentQuestionIndex = 0;
+                if (flag) {
+                    this.questions = this.incorrectAnswers;
+                }
+                this.currentStep = 2;
+            },
+            exportIncorrectAnswers() {
+                var zip = new JSZip();
+                document.querySelector("#correct").play();
+                // 获取当前日期
+                var currentDate = new Date();
+                var formattedDate = currentDate.toISOString().split('T')[0];
+
+                // 错题记录
+                var content = "";
+                for (var i = 0; i < this.incorrectAnswers.length; i++) {
+                    var question = this.incorrectAnswers[i][0];
+                    var correctAnswer = this.incorrectAnswers[i][1];
+                    var userAnswer = this.incorrectAnswers[i][2];
+                    content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
+                }
+                if (content) {
+                    zip.file("错题记录_" + formattedDate + ".txt", content);
+                }
+
+
+                // 错误的题
+                content = "";
+                for (var i = 0; i < incorrectAnswers.length; i++) {
+                    var question = incorrectAnswers[i][1];
+                    var correctAnswer = incorrectAnswers[i][0];
+                    content += question + "\n" + correctAnswer + "\n";
+                }
+                if (content) {
+                    zip.file("错题题库_" + formattedDate + ".txt", content);
+                }
+
+                // 跳过的题
+                content = "";
+                for (var i = 0; i < this.jumpAnswers.length; i++) {
+                    var question = this.jumpAnswers[i][1];
+                    var correctAnswer = this.jumpAnswers[i][0];
+                    content += question + "\n" + correctAnswer + "\n";
+                }
+                if (content) {
+                    zip.file("跳过题库_" + formattedDate + ".txt", content);
+                }
+
+                // 超时的题
+                content = "";
+                for (var i = 0; i < this.jumpTimeoutQuestion.length; i++) {
+                    var question = this.jumpTimeoutQuestion[i][0];
+                    var correctAnswer = this.jumpTimeoutQuestion[i][1];
+                    var userAnswer = this.jumpTimeoutQuestion[i][2];
+                    content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
+                }
+                if (content) {
+                    zip.file("超时记录_" + formattedDate + ".txt", content);
+                }
+
+                content = "";
+                for (var i = 0; i < this.jumpTimeoutQuestion.length; i++) {
+                    var question = this.jumpTimeoutQuestion[i][1];
+                    var correctAnswer = this.jumpTimeoutQuestion[i][0];
+                    content += question + "\n" + correctAnswer + "\n";
+                }
+                if (content) {
+                    zip.file("超时题库_" + formattedDate + ".txt", content);
+                }
+
+                content = "";
+                for (var i = 0; i < this.questions_bak.length; i++) {
+                    var question = this.questions_bak[i].question;
+                    var answer = this.questions_bak[i].answer;
+                    var time = this.questions_bak[i]['time'] || 0;
+                    content += question + "\n" + answer + "\n" + time + "\n";
+                }
+                if (content) {
+                    zip.file("耗时记录_" + formattedDate + ".txt", content);
+                }
+
+                zip.generateAsync({type: "blob"})
+                    .then(function (content) {
+                        saveAs(content, "题目合集.zip");
+                    });
+            }
+        }
+    });
+</script>
+</body>
+</html>

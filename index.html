@@ -4,7 +4,7 @@
     <title>单词记忆</title>
     <meta charset="UTF-8">
     <style>
-        #stepContainer {
+        .stepContainer {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
@@ -28,35 +28,30 @@
             background-color: green;
         }
 
-        #fileInputContainer {
+        .fileInputContainer {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
         }
 
-        #questionContainer {
-            display: none;
+        .questionContainer {
+            display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        #question {
+        .question {
             display: inline;
             margin-right: 10px;
-            font-size: 80px;
             margin-bottom: 10px;
+            font-size: 50px;
         }
 
-        #answer {
+        .answer {
             width: 600px;
             #height: 40px;
             font-size: 90px;
             margin-bottom: -5px;
-        }
-
-        #result {
-            font-size: 16px;
-            margin-bottom: 10px;
         }
 
         .modal {
@@ -105,24 +100,65 @@
             margin-left: 10px;
         }
 
-        #question {
-            font-size: 50px;
-        }
-
-        button {
-            height: 40px;
-            font-size: 30px;
-            margin-bottom: 10px;
-        }
-
-        #errorModalBody {
+        .errorModalBody {
             font-size: 30px;
         }
 
         .different {
             color: red;
         }
+
+        button {
+            height: 45px;
+            font-size: 25px;
+            background-color: #007BFF;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.5);
+            width: 20px; /* 可选 */
+            height: 20px; /* 可选 */
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <script src="./decimal.js"></script>
     <script src="./jszip.min.js"></script>
     <script src="./FileSaver.min.js"></script>
@@ -130,120 +166,283 @@
     <script src="./sweetalert2.all.min.js"></script>
 </head>
 <body>
-<audio id="btnKeyPress" src="./press.wav"></audio>
-<audio id="correct" src="./correct.wav"></audio>
-<audio id="incorrect" src="./error.wav"></audio>
-<div id="stepContainer">
-    <div class="step active">1</div>
-    <font style="font-size:36px">选择题目</font>&nbsp;&nbsp;
-    <div class="step">2</div>
-    <font style="font-size:36px">答题<span id="answerClockEle" style="display: none">(0.0)</span></font>&nbsp;&nbsp;
-    <div class="step">3</div>
-    <font style="font-size:36px">完成</font>
-</div>
-<div id="fileInputContainer">
-    <div>
-        <label for="starTime">计时</label>
-        <input id="starTime" type="checkbox" name="starTime" onchange="startTimeChange(this)"/>
-        <input style="display: none;" type="number" id="interval" name="interval" step="0.1" placeholder="单个字母的耗时（秒）"  />
+<div id="app">
+    <audio id="btnKeyPress" src="./press.wav"></audio>
+    <audio id="correct" src="./correct.wav"></audio>
+    <audio id="incorrect" src="./error.wav"></audio>
+    <div class="stepContainer">
+        <div class="step" :class="{active: currentStep === 1}">1</div>
+        <font style="font-size:36px">选择题目</font>&nbsp;&nbsp;
+        <div class="step" :class="{active: currentStep === 2}">2</div>
+        <font style="font-size:36px">答题<span v-if="showTimer">({{ timer }})</span></font>&nbsp;&nbsp;
+        <div class="step" :class="{active: currentStep === 3}">3</div>
+        <font style="font-size:36px">完成</font>
     </div>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <div>
-        <label for="nextQuest">回车</label>
-        <input id="nextQuest" type="checkbox" name="nextQuest"  checked/>
-    </div>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <div>
-        <input type="file" id="fileInput" accept=".txt" onchange="handleFileSelect(event)"/>
-    </div>
-</div>
-<div id="questionContainer">
-    <div><div id="question"></div><span   ><svg onclick="readWord()" style="width: 40px;height: 40px; cursor: pointer; z-index: 9999" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span></div>
-    <div>
-        <textarea id="answer" oninput="replaceNonAlphanumeric(event)" placeholder="请输入答案" rows="5"
-                  onkeypress="checkEnter(event)"></textarea>
-        <div style="margin: 10px; text-align: center">
-            <button id="submitBtn" onclick="checkAnswer()">下一题</button>
-            <button id="jumpBtn" onclick="jump()">跳过</button>
+    <div v-if="currentStep === 1">
+        <div class="fileInputContainer">
+            <div>
+                <label style="font-size:20px" for="starTime">计时</label>
+                <input style="font-size:20px" id="starTime" type="checkbox" v-model="startTimeChecked" @change="startTimeChange"/>
+                <input style="display: inline;font-size:20px" type="number" v-if="intervalShow" v-model="intervalValue" step="0.1"
+                       placeholder="单个字母的耗时（秒）"/>
+            </div>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <div>
+                <label style="font-size:20px"  for="nextQuest" title="勾选后，回车自动下一题">回车</label>
+                <input style="font-size:20px"  id="nextQuest" type="checkbox" v-model="nextQuestChecked"/>
+            </div>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <div>
+                <input type="file" id="fileInput" accept=".txt" style="display: none"
+                       onchange="handleFileSelect(event)"/>
+                <button type="button" onclick="document.querySelector('#fileInput').click()">增加题库</button>
+                <button type="button" onclick="showQuestionContainer()">去答题</button>
+            </div>
+        </div>
+        <div style=" display: flex;justify-content: center;align-items: center;">
+            <table style="width: 500px">
+                <thead>
+                <tr>
+                    <th>文件id</th>
+                    <th>文件名称</th>
+                    <th>添加时间</th>
+                    <th>练习</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(item, index) in import_record" :key="index">
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.fileName }}</td>
+                    <td>{{ item.time }}</td>
+                    <td><input type="checkbox" v-model="item.checked" @change="itemChange(item.id)"></td>
+                    <td class="action-buttons">
+                        <button class="button" @click="deleteItem(index)">删除</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
-    <div style="display:flex">
-        <button id="againBtn" style="display:none" onclick="againAnswers()">再来一次</button>
-        <button id="againErrorBtn" style="display:none" onclick="againAnswers(true)">练习错误/超时题目</button>
-        <button id="errorBtn" style="display:none" onclick="exportIncorrectAnswers()">导出题库/记录</button>
+    <div v-if="currentStep === 2" class="questionContainer">
+        <div>
+            <div class="question">{{questionText}}</div>
+            <span><svg onclick="readWord()" style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
+                       viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path
+                    d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
+        </div>
+        <div>
+        <textarea class="answer" ref="answer" v-show="!gameOver" oninput="replaceNonAlphanumeric(event)"
+                  placeholder="请输入答案" rows="5"
+                  onkeypress="checkEnter(event)">{{answerText}}</textarea>
+            <div style="margin: 10px; text-align: center">
+                <button onclick="checkAnswer()">下一题</button>
+                <button onclick="jump()">跳过</button>
+            </div>
+        </div>
+        <div style="display:flex" v-show="!gameOver">
+            <button onclick="againAnswers()">再来一次</button>
+            <button onclick="againAnswers(true)">练习错误/超时题目</button>
+            <button onclick="exportIncorrectAnswers()">导出题库/记录</button>
+        </div>
     </div>
-</div>
 
-<!-- Error Modal -->
-<div id="errorModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">回答错误</h5>
-        </div>
-        <div class="modal-body" id="errorModalBody">
-
-        </div>
-        <div class="modal-footer">
-            <button id="errorBtnKnow" type="button" onclick="closeErrorModal()">我知道了</button>
+    <!-- Error Modal -->
+    <div class="modal" v-show="errorModalShow">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">回答错误</h5>
+            </div>
+            <div class="modal-body" class="errorModalBody" v-html="errorModalBody"></div>
+            <div class="modal-footer">
+                <button id="errorBtnKnow" type="button" onclick="closeErrorModal()">我知道了</button>
+            </div>
         </div>
     </div>
 </div>
+<script>
+    const Database = {
+        // 初始化数据和自增主键
+        init(table) {
+            if (localStorage.getItem(table) === null) {
+                localStorage.setItem(table, JSON.stringify([]));
+            }
+            if (localStorage.getItem(table + '_primaryKey') === null) {
+                localStorage.setItem(table + '_primaryKey', '1');
+            }
+        },
+
+        // 查询列表接口支持任意字段查询
+        search(table, query) {
+            let storedData = JSON.parse(localStorage.getItem(table));
+
+            if (!query || Object.keys(query).length === 0) {
+                return storedData;
+            }
+
+            let result = storedData.filter(item => {
+                for (let key in query) {
+                    if (item[key] !== query[key]) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+            return result;
+        },
+
+        // 插入对象，插入后ID自增
+        insert(table, data) {
+            let storedData = JSON.parse(localStorage.getItem(table));
+            let primaryKey = localStorage.getItem(table + '_primaryKey');
+
+            data.id = primaryKey;
+            storedData.push(data);
+
+            localStorage.setItem(table, JSON.stringify(storedData));
+            localStorage.setItem(table + '_primaryKey', String(parseInt(primaryKey) + 1));
+        },
+
+        // 根据ID删除
+        deleteById(table, id) {
+            let storedData = JSON.parse(localStorage.getItem(table));
+            let updatedData = storedData.filter(item => item.id !== id);
+            localStorage.setItem(table, JSON.stringify(updatedData));
+        },
+
+        // 根据对象删除
+        delete(table, query) {
+            let storedData = JSON.parse(localStorage.getItem(table));
+            let updatedData = storedData.filter(item => {
+                for (let key in query) {
+                    if (item[key] !== query[key]) {
+                        return true; // 不匹配的保留
+                    }
+                }
+                return false; // 全部匹配的删除
+            });
+            localStorage.setItem(table, JSON.stringify(updatedData));
+        },
+        // 根据ID修改
+        updateById(table, newData) {
+            let storedData = JSON.parse(localStorage.getItem(table));
+            let index = storedData.findIndex(item => item.id === newData.id);
+
+            if (index !== -1) {
+                storedData[index] = {...storedData[index], ...newData};
+                localStorage.setItem(table, JSON.stringify(storedData));
+            }
+        }
+    };
+    const table_import = 'data_import_record'
+    const table_questions = 'data_questions'
+    // 初始化数据库
+    Database.init(table_import);
+    Database.init(table_questions);
+</script>
+<script>
+    const self = new Vue({
+        el: '#app',
+        data: {
+            currentStep: 1,
+            showTimer: false,
+            timer: 0.0,
+            startTimeChecked: false,
+            intervalShow: false,
+            intervalValue: 0,
+            nextQuestChecked: true,
+            questionText: "",
+            answerText: "",
+            gameOver: false,
+            errorModalBody: "",
+            errorModalShow: false,
+            import_record: [],
+            questions_bak: [],
+            questions: [],
+        },
+        mounted() {
+            this.loadItems();
+        },
+        methods: {
+            startTimeChange() {
+                if (this.startTimeChecked) {
+                    this.showTimer = true
+                    this.intervalShow = true
+                } else {
+                    this.showTimer = false
+                    this.intervalShow = false
+                }
+            },
+            loadItems() {
+                // 模拟从服务器加载数据
+                this.import_record = Database.search(table_import)
+            },
+            deleteItem(index) {
+                let record = this.import_record[index]
+                if (confirm('确定要删除此项吗？')) {
+                    this.import_record.splice(index, 1);
+                }
+                Database.deleteById(table_import, record, q)
+                Database.delete(table_questions, {file_id: record.id});
+            },
+            itemChange(id){
+                let findOne = this.import_record.filter(o=>o.id = id)
+                Database.updateById(table_import, findOne)
+            },
+        }
+    });
+</script>
 <script>
     var ok = 0;
     var error = 0;
     var jump_num = 0;
     var timeout = 0;
-    var questions = [];
-    var questions_bak = []
     var currentQuestionIndex = 0;
     var incorrectAnswers = [];
     var incorrectAnswersLast = [];
     var jumpAnswers = [];
 
     function showStep(step) {
-        var steps = document.getElementsByClassName("step");
-        for (var i = 0; i < steps.length; i++) {
-            steps[i].classList.remove("active");
+        self.currentStep = step
+        if (self.currentStep === 2) {
+            setTimeout(() => {
+                self.$refs.answer.focus();
+            }, 500)
         }
-        steps[step - 1].classList.add("active");
-        document.getElementById("answer").focus()
     }
 
     function showQuestionContainer() {
-        document.getElementById("fileInputContainer").style.display = "none";
-        document.getElementById("questionContainer").style.display = "flex";
+        self.questions_bak = Database.search(table_questions);
+        self.questions = self.questions_bak;
         showStep(2);
         displayQuestion(); // 添加这行代码
     }
 
     let start_time = undefined
+
     function displayQuestion() {
         delClock()
         let now = new Date().getTime();
-        if (start_time){
+        if (start_time) {
             let diff = new Decimal(now - start_time).div(1000).toNumber().toFixed(1, Decimal.ROUND_DOWN)
-            questions_bak[currentQuestionIndex - 1].time = diff;
+            self.questions_bak[currentQuestionIndex - 1].time = diff;
             start_time = now;
-        }else {
+        } else {
             start_time = now;
         }
-        if (currentQuestionIndex < questions.length) {
-            var question = questions[currentQuestionIndex].question;
-            var answer = questions[currentQuestionIndex].answer;
-            if(document.querySelector("#starTime").checked){
-                setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN))
+        if (currentQuestionIndex < self.questions.length) {
+            var question = self.questions[currentQuestionIndex].question;
+            var answer = self.questions[currentQuestionIndex].answer;
+            if (self.startTimeChecked) {
+                setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN))
             }
-            document.getElementById("question").textContent = question;
-            document.getElementById("answer").value = "";
+            alert(question)
+            self.questionText = question;
+            self.answerText = "";
         } else {
             showStep(3)
-            document.getElementById("question").textContent = "题目已完成，正确：" + ok + ", 错误：" + error + ", 跳过：" + jump_num + ", 超时：" + timeout;
-            document.getElementById("answer").style.display = "none";
-            document.getElementById("submitBtn").style.display = "none";
-            document.getElementById("jumpBtn").style.display = "none";
-            document.getElementById("againBtn").style.display = "block";
-            document.getElementById("againErrorBtn").style.display = "block";
-            document.getElementById("errorBtn").style.display = "block";
+            self.questionText = "题目已完成，正确：" + ok + ", 错误：" + error + ", 跳过：" + jump_num + ", 超时：" + timeout;
+            self.gameOver = true
         }
     }
 
@@ -251,7 +450,7 @@
     var errorQuestionLast = new Set()
 
     function checkAnswer() {
-        var userAnswer = document.getElementById("answer").value.trim();
+        var userAnswer = self.answerText.trim();
         if (!userAnswer) {
             Swal.fire({
                 html: `
@@ -264,14 +463,14 @@
             document.querySelector("#incorrect").play();
             return;
         }
-        var correctAnswer = questions[currentQuestionIndex].answer.trim();
+        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
         if (userAnswer === correctAnswer) {
             currentQuestionIndex++;
             ok++;
             document.querySelector("#correct").play();
             displayQuestion();
         } else {
-            let q = questions[currentQuestionIndex].question
+            let q = self.questions[currentQuestionIndex].question
             document.querySelector("#incorrect").play();
             addErrorQues(q, correctAnswer, userAnswer)
             showErrorModal();
@@ -284,9 +483,9 @@
 
     function jump() {
         document.querySelector("#correct").play();
-        let q = questions[currentQuestionIndex].question
-        var correctAnswer = questions[currentQuestionIndex].answer.trim();
-        var userAnswer = document.getElementById("answer").value.trim();
+        let q = self.questions[currentQuestionIndex].question
+        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
+        var userAnswer = self.answerText.trim();
         addJumpQues(q, correctAnswer, userAnswer)
         currentQuestionIndex++;
         displayQuestion();
@@ -295,10 +494,11 @@
     var jumpTimeoutQuestionSet = new Set();
     var jumpTimeoutQuestion = []
     var stopClock = false;
+
     function jumpTimeout() {
         document.querySelector("#correct").play();
-        let q = questions[currentQuestionIndex].question
-        var correctAnswer = questions[currentQuestionIndex].answer.trim();
+        let q = self.questions[currentQuestionIndex].question
+        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
         stopClock = true;
         Swal.fire({
             title: '回答超时',
@@ -308,16 +508,16 @@
             //icon: 'error',
             confirmButtonColor: '#FF0000',
             confirmButtonText: '知道了'
-        }).then((result)=>{
+        }).then((result) => {
             stopClock = false;
-            var userAnswer = document.getElementById("answer").value.trim();
+            var userAnswer = self.answerText.value.trim();
             addJumpTimeoutQues(q, correctAnswer, userAnswer)
             currentQuestionIndex++;
             displayQuestion();
         })
     }
 
-    function addJumpQues(q, correctAnswer, userAnswer){
+    function addJumpQues(q, correctAnswer, userAnswer) {
         jump_num++
         if (!jumpQuestion.has(q)) {
             jumpQuestion.add(q)
@@ -325,28 +525,28 @@
         }
     }
 
-    function addJumpTimeoutQues(q, correctAnswer, userAnswer){
+    function addJumpTimeoutQues(q, correctAnswer, userAnswer) {
         timeout++
         if (!jumpTimeoutQuestionSet.has(q)) {
             jumpTimeoutQuestionSet.add(q)
             jumpTimeoutQuestion.push([q, correctAnswer, userAnswer]);
         }
-        if (!errorQuestionLast.has(q)){
+        if (!errorQuestionLast.has(q)) {
             errorQuestionLast.add(q)
             incorrectAnswersLast.push([q, correctAnswer, userAnswer]);
         }
-        if (!errorQuestion.has(q)){
+        if (!errorQuestion.has(q)) {
             errorQuestion.add(q)
             incorrectAnswers.push([q, correctAnswer, userAnswer]);
         }
     }
 
-    function addErrorQues(q, correctAnswer, userAnswer){
-        if (!errorQuestion.has(q)){
+    function addErrorQues(q, correctAnswer, userAnswer) {
+        if (!errorQuestion.has(q)) {
             errorQuestion.add(q)
             incorrectAnswers.push([q, correctAnswer, userAnswer]);
         }
-        if (!errorQuestionLast.has(q)){
+        if (!errorQuestionLast.has(q)) {
             error++
             errorQuestionLast.add(q)
             incorrectAnswersLast.push([q, correctAnswer, userAnswer]);
@@ -354,14 +554,11 @@
     }
 
     function showErrorModal() {
-        var modal = document.getElementById("errorModal");
-        var modalBody = document.getElementById("errorModalBody");
-        var closeButton = document.getElementById("errorModalCloseButton");
-        modalBody.innerHTML = `
-             <div><span style="color: green;background: #ececec">${questions[currentQuestionIndex].answer}</span></div><br/>
-             <div><span style="background: #ececec">${compareStrings(questions[currentQuestionIndex].answer, document.getElementById("answer").value.trim())}</span></div>
+        self.errorModalBody = `
+             <div><span style="color: green;background: #ececec">${self.questions[currentQuestionIndex].answer}</span></div><br/>
+             <div><span style="background: #ececec">${compareStrings(self.questions[currentQuestionIndex].answer, self.answerText.trim())}</span></div>
             `
-        modal.style.display = "block";
+        self.errorModalShow = true
         document.getElementById("errorBtnKnow").focus()
     }
 
@@ -371,17 +568,31 @@
         reader.onload = function (e) {
             var contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
             var lines = contents.split("\n");
+            var fileName = file.name;
+            var addedTime = new Date().getTime();
+            let file_record = {
+                fileName: fileName,
+                time: addedTime,
+                checked: true
+            }
+            Database.insert(table_import, file_record)
+
             for (var i = 0; i < lines.length; i += 2) {
                 try {
                     var question = lines[i + 1].trim();
                     var answer = lines[i].trim();
-                    questions.push({question: question, answer: answer});
+                    self.questions.push({
+                        question: question,
+                        answer: answer,
+                        file_id: file_record.id
+                    });
                 } catch (e) {
 
                 }
             }
-            questions_bak = questions;
-            showQuestionContainer();
+            for (let questionsBakElement of self.questions) {
+                Database.insert(table_questions, questionsBakElement)
+            }
         };
         reader.readAsText(file);
     }
@@ -393,21 +604,16 @@
         jump_num = 0
         timeout = 0
         start_time = undefined
-        document.getElementById("answer").style.display = "inline";
-        document.getElementById("submitBtn").style.display = "inline";
-        document.getElementById("jumpBtn").style.display = "inline";
-        document.getElementById("againBtn").style.display = "none";
-        document.getElementById("againErrorBtn").style.display = "none";
-        document.getElementById("errorBtn").style.display = "none";
+        self.gameOver = false
         if (flag) {
-            questions = []
+            self.questions = []
             for (q of incorrectAnswersLast) {
-                questions.push({question: q[0], answer: q[1]});
+                self.questions.push({question: q[0], answer: q[1]});
             }
             errorQuestionLast.clear()
             incorrectAnswersLast = []
         } else {
-            questions = questions_bak;
+            self.questions = self.questions_bak;
         }
         showQuestionContainer()
     }
@@ -436,7 +642,7 @@
             content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
         }
         if (content) {
-            zip.file( "错题记录_" + formattedDate + ".txt", content);
+            zip.file("错题记录_" + formattedDate + ".txt", content);
         }
 
 
@@ -448,7 +654,7 @@
             content += question + "\n" + correctAnswer + "\n";
         }
         if (content) {
-            zip.file( "错题题库_" + formattedDate + ".txt", content);
+            zip.file("错题题库_" + formattedDate + ".txt", content);
         }
 
         // 跳过的题
@@ -459,7 +665,7 @@
             content += question + "\n" + correctAnswer + "\n";
         }
         if (content) {
-            zip.file( "跳过题库_" + formattedDate + ".txt", content);
+            zip.file("跳过题库_" + formattedDate + ".txt", content);
         }
 
         // 超时的题
@@ -471,7 +677,7 @@
             content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
         }
         if (content) {
-            zip.file( "超时记录_" + formattedDate + ".txt", content);
+            zip.file("超时记录_" + formattedDate + ".txt", content);
         }
 
         content = "";
@@ -481,42 +687,41 @@
             content += question + "\n" + correctAnswer + "\n";
         }
         if (content) {
-            zip.file( "超时题库_" + formattedDate + ".txt", content);
+            zip.file("超时题库_" + formattedDate + ".txt", content);
         }
 
         content = "";
-        for (var i = 0; i < questions_bak.length; i++) {
-            var question = questions_bak[i].question;
-            var answer = questions_bak[i].answer;
-            var time = questions_bak[i]['time'] || 0;
+        for (var i = 0; i < self.questions_bak.length; i++) {
+            var question = self.questions_bak[i].question;
+            var answer = self.questions_bak[i].answer;
+            var time = self.questions_bak[i]['time'] || 0;
             content += question + "\n" + answer + "\n" + time + "\n";
         }
         if (content) {
-            zip.file( "耗时记录_" + formattedDate + ".txt", content);
+            zip.file("耗时记录_" + formattedDate + ".txt", content);
         }
 
-        zip.generateAsync({type:"blob"})
-            .then(function(content) {
+        zip.generateAsync({type: "blob"})
+            .then(function (content) {
                 saveAs(content, "题目合集.zip");
             });
     }
 
     let downTime = 0.1;
     let answerClock = undefined
-    function setClock(questionTime=60, fcore=false){
-        const answerClockEle = document.querySelector("#answerClockEle")
-        if (answerClockEle.innerText === '(0.0)' || fcore){
-            answerClockEle.innerText = '(' + questionTime + ')';
+
+    function setClock(questionTime = 60, fcore = false) {
+        self.showTimer = true
+        if (self.timer === 0 || fcore) {
+            self.timer = questionTime;
         }
-        answerClock = setInterval(()=>{
-            if(stopClock){
+        answerClock = setInterval(() => {
+            if (stopClock) {
                 return
             }
-            let val = document.querySelector("#answerClockEle").innerText.replace(/[\(\)]/g,'')
-            if(parseFloat(val) > 0){
-                val = new Decimal(val).sub(downTime).toNumber().toFixed(1, Decimal.ROUND_DOWN);
-                document.querySelector("#answerClockEle").innerText = '(' + val + ')'
-            }else{
+            if (self.timer > 0) {
+                self.timer = new Decimal(self.timer).sub(downTime).toNumber().toFixed(1, Decimal.ROUND_DOWN);
+            } else {
                 delClock()
                 // 题目结束，下一题
                 jumpTimeout()
@@ -524,9 +729,9 @@
         }, downTime * 1000)
     }
 
-    function delClock(){
-        if (answerClock != undefined){
-            document.querySelector("#answerClockEle").innerText = '(0.0)'
+    function delClock() {
+        if (answerClock != undefined) {
+            self.timer = 0.0
             clearInterval(answerClock);
             answerClock = undefined;
         }
@@ -534,7 +739,7 @@
 
 
     function checkEnter(event) {
-        if (event.keyCode === 13 && document.querySelector("#nextQuest").checked) {
+        if (event.keyCode === 13 && self.nextQuestChecked) {
             event.preventDefault();
             checkAnswer();
         }
@@ -570,35 +775,26 @@
     }
 
     // 监听键盘按下事件
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         document.querySelector("#btnKeyPress").play();
     });
 
-    function readWord(){
-        var correctAnswer = questions[currentQuestionIndex].answer.trim();
+    function readWord() {
+        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
         new Audio(`https://dict.youdao.com/dictvoice?audio=${correctAnswer}&type=2`).play();
     }
 
     function closeErrorModal() {
-        var modal = document.getElementById("errorModal");
-        modal.style.display = "none";
-        document.getElementById("answer").value = "";
-        document.getElementById("answer").focus()
-        if(document.querySelector("#starTime").checked){
-            if(questions[currentQuestionIndex]){
-                var answer = questions[currentQuestionIndex].answer;
-                setClock(new Decimal(answer.replace(/\s+/g,'').length).mul(document.querySelector("#interval").value).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
+        self.errorModalShow = false;
+        self.answerText = "";
+        setTimeout(() => {
+            self.$refs.answer.focus();
+        }, 500)
+        if (self.startTimeChecked) {
+            if (self.questions[currentQuestionIndex]) {
+                var answer = self.questions[currentQuestionIndex].answer;
+                setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
             }
-        }
-    }
-
-    function startTimeChange(target){
-        if(target.checked){
-            document.querySelector("#answerClockEle").style = "display:inline";
-            document.querySelector('#interval').style = 'display:inline';
-        }else {
-            document.querySelector("#answerClockEle").style = "display:none";
-            document.querySelector('#interval').style = 'display:none';
         }
     }
 </script>
