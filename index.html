@@ -578,7 +578,6 @@
         if (!jumpQuestion.has(q.id)) {
             jumpQuestion.add(q.id)
             jumpAnswers.push(q);
-            addErrorQues(q, userAnswer)
         }
     }
 
@@ -589,7 +588,6 @@
             jumpTimeoutQuestionSet.add(q.id)
             jumpTimeoutQuestion.push(q);
         }
-        addErrorQues(q, userAnswer)
     }
 
     function addErrorQues(q, userAnswer) {
@@ -697,6 +695,9 @@
                 self.questions.push(q);
             }
             for (q of jumpAnswers) {
+                self.questions.push(q);
+            }
+            for (q of jumpTimeoutQuestion) {
                 self.questions.push(q);
             }
             errorQuestionLast.clear()
