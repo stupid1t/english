@@ -441,8 +441,15 @@
     var currentQuestionIndex = 0;
     // 所有错误的题
     var incorrectAnswers = [];
-    var incorrectAnswersLast = [];
+    var errorQuestion = new Set()
+
     var jumpAnswers = [];
+    var jumpQuestion = new Set()
+
+    var jumpTimeoutQuestion = []
+    var jumpTimeoutQuestionSet = new Set();
+
+    var stopClock = false;
 
     function showStep(step) {
         self.currentStep = step
@@ -497,9 +504,6 @@
         }
     }
 
-    var errorQuestion = new Set()
-    var errorQuestionLast = new Set()
-
     function checkAnswer() {
         var userAnswer = self.answerText.trim();
         if (!userAnswer) {
@@ -530,8 +534,6 @@
         }
     }
 
-    var jumpQuestion = new Set()
-
     function jump() {
         if (currentQuestionIndex >= self.questions.length) {
             showStep(3)
@@ -545,10 +547,6 @@
         currentQuestionIndex++;
         displayQuestion();
     }
-
-    var jumpTimeoutQuestionSet = new Set();
-    var jumpTimeoutQuestion = []
-    var stopClock = false;
 
     function jumpTimeout() {
         document.querySelector("#correct").play();
@@ -595,11 +593,7 @@
         if (!errorQuestion.has(q.id)) {
             errorQuestion.add(q.id)
             incorrectAnswers.push(q);
-        }
-        if (!errorQuestionLast.has(q.id)) {
-            self.error++
-            errorQuestionLast.add(q.id)
-            incorrectAnswersLast.push(q);
+            self.error ++;
         }
     }
 
@@ -691,7 +685,7 @@
         self.gameOver = false
         if (flag) {
             self.questions = []
-            for (q of incorrectAnswersLast) {
+            for (q of incorrectAnswers) {
                 self.questions.push(q);
             }
             for (q of jumpAnswers) {
@@ -700,8 +694,23 @@
             for (q of jumpTimeoutQuestion) {
                 self.questions.push(q);
             }
-            errorQuestionLast.clear()
-            incorrectAnswersLast = []
+
+            // 去除重复题目
+            // 使用reduce方法进行去重
+            self.questions = self.questions.reduce((accumulator, current) => {
+                // 检查累加器中是否已经存在具有相同id的对象
+                if (!accumulator.some(item => item.id === current.id)) {
+                    accumulator.push(current);
+                }
+                return accumulator;
+            }, []);
+            console.log(self.questions)
+            incorrectAnswers = [];
+            errorQuestion.clear();
+            jumpAnswers = []
+            jumpQuestion.clear();
+            jumpTimeoutQuestion = []
+            jumpTimeoutQuestionSet.clear();
         } else {
             self.questions = self.questions_bak;
         }
