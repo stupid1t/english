@@ -197,9 +197,6 @@
                     <option value="4">x 4</option>
                     <option value="5">x 5</option>
                 </select>
-                <input style="display: inline;font-size:20px;width: 60px;" type="number" v-if="intervalShow"
-                       v-model="intervalValue" step="0.1"
-                       placeholder="单个字母的耗时（秒）"/>
             </div>
             <div style="margin-top: 10px;margin-right: 20px">
                 <label style="font-size:20px" for="showQuestion" title="勾选后，显示题目">题目显示</label>
@@ -636,7 +633,14 @@
                     }
                 }
             } else if (result.isDenied) {
-                Swal.fire(body);
+                Swal.fire(body).then(() => {
+                    if (self.startTimeChecked) {
+                        if (self.questions[currentQuestionIndex]) {
+                            var answer = self.questions[currentQuestionIndex].answer;
+                            setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
+                        }
+                    }
+                });
             } else {
                 Swal.fire('按钮2点击了');
             }
@@ -733,7 +737,7 @@
         for (let file_id in incorrectAnswersBy) {
             let incorrectAnswersSub = incorrectAnswersBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<"
+            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
@@ -750,7 +754,7 @@
         for (let file_id in incorrectAnswersBy) {
             let incorrectAnswersSub = incorrectAnswersBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<"
+            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
@@ -767,7 +771,7 @@
         for (let file_id in jumpAnswersBy) {
             let jumpAnswersSub = jumpAnswersBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<"
+            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < jumpAnswersSub.length; i++) {
                 var question = jumpAnswersSub[i].question;
                 var correctAnswer = jumpAnswersSub[i].answer;
@@ -784,7 +788,7 @@
         for (let file_id in jumpTimeoutQuestionBy) {
             let jumpTimeoutQuestionSub = jumpTimeoutQuestionBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<"
+            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < jumpTimeoutQuestionSub.length; i++) {
                 var question = jumpTimeoutQuestionSub[i].question;
                 var correctAnswer = jumpTimeoutQuestionSub[i].answer;
@@ -800,7 +804,7 @@
         for (let file_id in jumpTimeoutQuestionBy) {
             let jumpTimeoutQuestionSub = jumpTimeoutQuestionBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<"
+            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < jumpTimeoutQuestionSub.length; i++) {
                 var question = jumpTimeoutQuestionSub[i].question;
                 var correctAnswer = jumpTimeoutQuestionSub[i].answer;
@@ -816,7 +820,7 @@
         for (let file_id in questions_bak_by) {
             let questions_bak_sub = questions_bak_by[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<"
+            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < questions_bak_sub.length; i++) {
                 var question = questions_bak_sub[i].question;
                 var answer = questions_bak_sub[i].answer;
