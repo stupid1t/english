@@ -254,11 +254,13 @@
                   onkeypress="checkEnter(event)"></textarea>
             <div v-show="!gameOver" style="margin: 10px; text-align: center">
                 <div style="font-size: 30px">正确:{{ok}} 错误:{{error}} 跳过:{{jump_num}} 超时:{{timeout}}</div>
+                <button style="background: red" onclick="window.location.reload()">重选题库</button>
                 <button onclick="checkAnswer()">下一题</button>
                 <button onclick="jump()">跳过</button>
             </div>
         </div>
         <div v-show="gameOver" style="display:none">
+            <button style="background: red" onclick="window.location.reload()">重选题库</button>
             <button onclick="againAnswers()">再来一次</button>
             <button v-show="(error + jump_num + timeout) > 0" onclick="againAnswers(true)">练习错误/超时/跳过题目</button>
             <button onclick="exportIncorrectAnswers()">导出题库/记录</button>
