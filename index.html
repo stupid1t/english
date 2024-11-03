@@ -658,12 +658,12 @@
                 checked: true
             }
             Database.insert(table_import, file_record)
-
+            let import_questions = []
             for (var i = 0; i < lines.length; i += 2) {
                 try {
                     var question = lines[i + 1].trim();
                     var answer = lines[i].trim();
-                    self.questions.push({
+                    import_questions.push({
                         question: question,
                         answer: answer,
                         file_id: file_record.id
@@ -672,7 +672,7 @@
 
                 }
             }
-            for (let questionsBakElement of self.questions) {
+            for (let questionsBakElement of import_questions) {
                 Database.insert(table_questions, questionsBakElement)
             }
             self.loadItems();
