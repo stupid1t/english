@@ -535,7 +535,6 @@
     function jump() {
         document.querySelector("#correct").play();
         let q = self.questions[currentQuestionIndex].question
-        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
         var userAnswer = self.answerText.trim();
         addJumpQues(self.questions[currentQuestionIndex], userAnswer)
         currentQuestionIndex++;
