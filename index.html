@@ -533,6 +533,11 @@
     var jumpQuestion = new Set()
 
     function jump() {
+        if (currentQuestionIndex >= self.questions.length) {
+            showStep(3)
+            self.questionText = "题目已完成，正确：" + self.ok + ", 错误：" + self.error + ", 跳过：" + self.jump_num + ", 超时：" + self.timeout;
+            self.gameOver = true
+        }
         document.querySelector("#correct").play();
         let q = self.questions[currentQuestionIndex].question
         var userAnswer = self.answerText.trim();
@@ -548,7 +553,6 @@
     function jumpTimeout() {
         document.querySelector("#correct").play();
         let q = self.questions[currentQuestionIndex].question
-        debugger
         var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
         stopClock = true;
         Swal.fire({
@@ -574,7 +578,7 @@
         if (!jumpQuestion.has(q.id)) {
             jumpQuestion.add(q.id)
             jumpAnswers.push(q);
-            incorrectAnswers.push(q)
+            addErrorQues(q, userAnswer)
         }
     }
 
@@ -585,14 +589,7 @@
             jumpTimeoutQuestionSet.add(q.id)
             jumpTimeoutQuestion.push(q);
         }
-        if (!errorQuestionLast.has(q.id)) {
-            errorQuestionLast.add(q.id)
-            incorrectAnswersLast.push(q);
-        }
-        if (!errorQuestion.has(q.id)) {
-            errorQuestion.add(q.id)
-            incorrectAnswers.push(q);
-        }
+        addErrorQues(q, userAnswer)
     }
 
     function addErrorQues(q, userAnswer) {
@@ -609,9 +606,10 @@
     }
 
     function showErrorModal() {
-        let body = `
+        let body = `<div style="max-width: 500px;overflow-x: auto">
                  <div><span style="color: green;background: #ececec">${self.questions[currentQuestionIndex].answer}</span></div><br/>
                  <div><span style="background: #ececec">${compareStrings(self.questions[currentQuestionIndex].answer, self.answerText.trim())}</span></div>
+                 </div>
             `
         Swal.fire({
             title: '回答错误',
