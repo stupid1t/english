@@ -439,6 +439,7 @@
 </script>
 <script>
     var currentQuestionIndex = 0;
+    // 所有错误的题
     var incorrectAnswers = [];
     var incorrectAnswersLast = [];
     var jumpAnswers = [];
@@ -571,8 +572,8 @@
     function addJumpQues(q, userAnswer) {
         self.jump_num++
         q['userAnswer'] = userAnswer
-        if (!jumpQuestion.has(q)) {
-            jumpQuestion.add(q)
+        if (!jumpQuestion.has(q.id)) {
+            jumpQuestion.add(q.id)
             jumpAnswers.push(q);
             incorrectAnswers.push(q)
         }
@@ -581,29 +582,29 @@
     function addJumpTimeoutQues(q, userAnswer) {
         self.timeout++
         q['userAnswer'] = userAnswer
-        if (!jumpTimeoutQuestionSet.has(q)) {
-            jumpTimeoutQuestionSet.add(q)
+        if (!jumpTimeoutQuestionSet.has(q.id)) {
+            jumpTimeoutQuestionSet.add(q.id)
             jumpTimeoutQuestion.push(q);
         }
-        if (!errorQuestionLast.has(q)) {
-            errorQuestionLast.add(q)
+        if (!errorQuestionLast.has(q.id)) {
+            errorQuestionLast.add(q.id)
             incorrectAnswersLast.push(q);
         }
-        if (!errorQuestion.has(q)) {
-            errorQuestion.add(q)
+        if (!errorQuestion.has(q.id)) {
+            errorQuestion.add(q.id)
             incorrectAnswers.push(q);
         }
     }
 
     function addErrorQues(q, userAnswer) {
         q['userAnswer'] = userAnswer
-        if (!errorQuestion.has(q)) {
-            errorQuestion.add(q)
+        if (!errorQuestion.has(q.id)) {
+            errorQuestion.add(q.id)
             incorrectAnswers.push(q);
         }
-        if (!errorQuestionLast.has(q)) {
+        if (!errorQuestionLast.has(q.id)) {
             self.error++
-            errorQuestionLast.add(q)
+            errorQuestionLast.add(q.id)
             incorrectAnswersLast.push(q);
         }
     }
