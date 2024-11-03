@@ -260,7 +260,7 @@
         </div>
         <div v-show="gameOver" style="display:none">
             <button onclick="againAnswers()">再来一次</button>
-            <button onclick="againAnswers(true)">练习错误/超时/跳过题目</button>
+            <button v-show="(error + jump_num + timeout) > 0" onclick="againAnswers(true)">练习错误/超时/跳过题目</button>
             <button onclick="exportIncorrectAnswers()">导出题库/记录</button>
         </div>
     </div>
