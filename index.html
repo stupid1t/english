@@ -206,7 +206,7 @@
         <div style=" display: flex;justify-content: center;align-items: center;">
             <input type="file" id="fileInput" accept=".txt" style="display: none"
                    onchange="handleFileSelect(event)"/>
-            <button type="button" onclick="document.querySelector('#fileInput').click()">增加题库</button>
+            <button type="button" onclick="document.querySelector('#fileInput').click();self.speak('增加题库')">增加题库</button>
             &nbsp;&nbsp;
             <button type="button" onclick="showQuestionContainer()">去答题</button>
         </div>
@@ -434,6 +434,11 @@
             },
             replaceNonAlphanumeric() {
                 this.answerText = this.answerText.replace(/[^ \-a-zA-Z0-9.,?!/='"><$&*()~`@#%^_+{}\[\]:;、\\]/g, '');
+            },
+            speak(text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                window.speechSynthesis.speak(utterance);
             }
 
         }
