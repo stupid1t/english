@@ -41,10 +41,11 @@
         }
 
         .question {
-            display: inline;
+            display: inline-block;
             margin-right: 10px;
             margin-bottom: 10px;
             font-size: 50px;
+            height: 80px;
         }
 
         .answer {
@@ -182,7 +183,25 @@
             <div style="margin-top: 10px;margin-right: 20px">
                 <label style="font-size:20px" for="readWord" title="勾选后，可以播放语音">语音播放</label>
                 <select style="font-size:20px" id="readWord" v-model="readWordSelected">
-                    <option :value=0>无</option>
+                    <option :value=0>关</option>
+                    <option :value=2>开</option>
+                </select>
+                <span v-show="readWordSelected && cnVoices.length > 0">中</span>
+                <select style="font-size:20px" v-model="selectCnVoices"
+                        v-show="readWordSelected && cnVoices.length > 0">
+                    <option v-for="voice in cnVoices" :key="voice.voiceURI" :value="voice.voiceURI">{{ voice.newName
+                        }}
+                    </option>
+                </select>
+                <span v-show="readWordSelected && enVoices.length > 0">英</span>
+                <select style="font-size:20px" v-model="selectEnVoices"
+                        v-show="readWordSelected && enVoices.length > 0">
+                    <option v-for="voice in enVoices" :key="voice.voiceURI" :value="voice.voiceURI">{{ voice.newName
+                        }}
+                    </option>
+                </select>
+                <select style="font-size:20px" v-model="readWordSelected"
+                        v-show="readWordSelected && selectCnVoices ==='有道'">
                     <option :value=2>美式</option>
                     <option :value=1>英式</option>
                 </select>
@@ -206,7 +225,7 @@
         <div style=" display: flex;justify-content: center;align-items: center;">
             <input type="file" id="fileInput" accept=".txt" style="display: none"
                    onchange="handleFileSelect(event)"/>
-            <button type="button" onclick="document.querySelector('#fileInput').click();self.speak('增加题库')">增加题库</button>
+            <button type="button" onclick="document.querySelector('#fileInput').click();">增加题库</button>
             &nbsp;&nbsp;
             <button type="button" onclick="showQuestionContainer()">去答题</button>
         </div>
@@ -241,12 +260,19 @@
     </div>
     <div v-if="currentStep === 2 || currentStep === 3" class="questionContainer">
         <div>
-            <div v-if="showQuestionChecked" class="question">{{questionText}}</div>
-            <span v-if="readWordSelected"><svg onclick="readWord()"
-                                               style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
-                                               viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"
-                                               fill="currentColor"><path
-                    d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
+            <div v-if="showQuestionChecked" class="question">
+                <div v-if="!questionText.endsWith('.png')">
+                    {{questionText}}
+                    <span v-if="readWordSelected"><svg onclick="readTitle()"
+                                                       style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
+                                                       viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"
+                                                       fill="currentColor"><path
+                            d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
+                </div>
+                <div v-if="questionText.endsWith('.png')">
+                    <img :src="'/english/images/' + questionText" style="max-height: 250px">
+                </div>
+            </div>
         </div>
         <div>
         <textarea class="answer" ref="answer" v-show="!gameOver" v-model="answerText" @keyup="replaceNonAlphanumeric"
@@ -255,6 +281,8 @@
             <div v-show="!gameOver" style="margin: 10px; text-align: center">
                 <div style="font-size: 30px">正确:{{ok}} 错误:{{error}} 跳过:{{jump_num}} 超时:{{timeout}}</div>
                 <button style="background: red" onclick="window.location.reload()">重选题库</button>
+                <button v-if="readWordSelected" onclick="readAnswer()">播放答案</button>
+                <button v-if="hasLastAnswer" onclick="insertAnswer()">插入上次回答</button>
                 <button onclick="checkAnswer()">下一题</button>
                 <button onclick="jump()">跳过</button>
             </div>
@@ -262,7 +290,8 @@
         <div v-show="gameOver" style="display:none">
             <button style="background: red" onclick="window.location.reload()">重选题库</button>
             <button onclick="againAnswers()">再来一次</button>
-            <button v-show="(error + jump_num + timeout) > 0" onclick="againAnswers(true)">练习错误/超时/跳过题目</button>
+            <button v-show="(error + jump_num + timeout) > 0" onclick="againAnswers(true)">练习错误/超时/跳过题目
+            </button>
             <button onclick="exportIncorrectAnswers()">导出题库/记录</button>
         </div>
     </div>
@@ -350,6 +379,7 @@
     const self = new Vue({
         el: '#app',
         data: {
+            currentQuestionIndex: -1,
             currentStep: 1,
             showTimer: false,
             timer: 0.0,
@@ -370,9 +400,21 @@
             jump_num: 0,
             timeout: 0,
             playbackRate: 1,
+            hasLastAnswer: false,
+            cnVoices: [],
+            enVoices: [],
+            selectCnVoices: '',
+            selectEnVoices: '',
         },
         mounted() {
             this.loadItems();
+            this.getVoices();
+        },
+        watch: {
+            currentQuestionIndex(oldVal, newVal) {
+                let answer = self.questions[this.currentQuestionIndex]
+                this.hasLastAnswer = answer && answer['lastAnswer']
+            }
         },
         methods: {
             startTimeChange() {
@@ -420,6 +462,9 @@
                 Database.updateById(table_import, findOne)
                 this.loadItems()
             },
+            recordLastAnswer(question) {
+                Database.updateById(table_questions, {id: question.id, lastAnswer: question.lastAnswer})
+            },
             formatTimestamp(timestamp) {
                 const date = new Date(timestamp);
                 const options = {
@@ -433,19 +478,74 @@
                 return new Intl.DateTimeFormat('zh-CN', options).format(date);
             },
             replaceNonAlphanumeric() {
-                this.answerText = this.answerText.replace(/[^ \-a-zA-Z0-9.,?!/='"><$&*()~`@#%^_+{}\[\]:;、\\]/g, '');
+                //this.answerText = this.answerText.replace(/[^ \-a-zA-Z0-9.,?!/='"><$&*()~`@#%^_+{}\[\]:;、\\]/g, '');
+            },
+            selectDefault() {
+                self.selectCnVoices = this.cnVoices[0].voiceURI
+                self.selectEnVoices = this.enVoices[0].voiceURI
+            },
+            getVoices() {
+                let v = undefined;
+                v = setInterval(() => {
+                    let voices = window.speechSynthesis.getVoices().filter(o => (o.lang === 'zh-CN' || o.lang === 'en-US') && o.voiceURI.indexOf('Natural') > -1)
+                    let cnVoices = voices.filter(o => (o.lang === 'zh-CN'))
+                    if (cnVoices.length && self.cnVoices.length === 0) {
+                        cnVoices = cnVoices.map(o => {
+                            let newName = o.name.replace('Microsoft ', '')
+                            newName = newName.replace(' Online (Natural) - Chinese (Mainland)', '')
+                            o['newName'] = newName;
+                            return o;
+                        })
+                        for (let enVoice of cnVoices) {
+                            self.cnVoices.push(enVoice)
+                        }
+                    }
+                    let enVoices = voices.filter(o => (o.lang === 'en-US'))
+                    if (enVoices.length && self.enVoices.length === 0) {
+                        enVoices = enVoices.map(o => {
+                            let newName = o.name.replace('Microsoft ', '')
+                            newName = newName.replace(' Online (Natural) - English (United States)', '')
+                            o['newName'] = newName;
+                            return o;
+                        })
+                        self.enVoices.push({
+                            newName: '有道',
+                            voiceURI: '有道'
+                        })
+                        for (let enVoice of enVoices) {
+                            self.enVoices.push(enVoice)
+                        }
+                    }
+                    if (self.cnVoices.length > 1 && self.enVoices.length > 1) {
+                        clearInterval(v);
+                        self.selectDefault()
+                    }
+                }, 1000)
             },
             speak(text) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-CN';
-                window.speechSynthesis.speak(utterance);
+                // 选中非有道，或者读汉字，用系统语音包
+                if (hasChinese(text)) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.voice = self.cnVoices.filter(o => o.voiceURI === self.selectCnVoices)[0]
+                    utterance.rate = self.playbackRate;
+                    utterance.lang = 'zh-CN';
+                    window.speechSynthesis.speak(utterance);
+                } else if (this.selectEnVoices === '有道') {
+                    let audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${text}&type=${self.readWordSelected}`)
+                    audio.playbackRate = self.playbackRate; // 设置播放速度为1.5倍
+                    audio.play();
+                } else {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.voice = self.enVoices.filter(o => o.voiceURI === self.selectEnVoices)[0]
+                    utterance.rate = self.playbackRate;
+                    utterance.lang = 'zh-CN';
+                    window.speechSynthesis.speak(utterance);
+                }
             }
-
         }
     });
 </script>
 <script>
-    var currentQuestionIndex = 0;
     // 所有错误的题
     var incorrectAnswers = [];
     var errorQuestion = new Set()
@@ -482,26 +582,29 @@
     let start_time = undefined
 
     function displayQuestion() {
+        if (self.currentQuestionIndex === -1) {
+            self.currentQuestionIndex = 0
+        }
         delClock()
         let now = new Date().getTime();
         if (start_time) {
             let diff = new Decimal(now - start_time).div(1000).toNumber().toFixed(1, Decimal.ROUND_DOWN)
-            self.questions_bak[currentQuestionIndex - 1].time = diff;
+            self.questions_bak[self.currentQuestionIndex - 1].time = diff;
             start_time = now;
         } else {
             start_time = now;
         }
-        if (currentQuestionIndex < self.questions.length) {
-            var question = self.questions[currentQuestionIndex].question;
-            var answer = self.questions[currentQuestionIndex].answer;
+        if (self.currentQuestionIndex < self.questions.length) {
+            var question = self.questions[self.currentQuestionIndex].question;
+            var answer = self.questions[self.currentQuestionIndex].answer;
             if (self.startTimeChecked) {
                 setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN))
             }
             self.questionText = question;
             self.answerText = "";
-            if (self.readWordSelected) {
+            if (false) {
                 setTimeout(() => {
-                    readWord()
+                    readAnswer()
                 }, 500)
             }
         } else {
@@ -509,6 +612,12 @@
             self.questionText = "题目已完成，正确：" + self.ok + ", 错误：" + self.error + ", 跳过：" + self.jump_num + ", 超时：" + self.timeout;
             self.gameOver = true
         }
+    }
+
+    function insertAnswer() {
+        let lastQuestion = self.questions[self.currentQuestionIndex]['lastAnswer']
+        let correctAnswer = self.questions[self.currentQuestionIndex].answer.trim();
+        self.answerText = compareStringReplace(correctAnswer, lastQuestion)
     }
 
     function checkAnswer() {
@@ -525,16 +634,18 @@
             document.querySelector("#incorrect").play();
             return;
         }
-        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
+        self.questions[self.currentQuestionIndex]['lastAnswer'] = userAnswer
+        var correctAnswer = self.questions[self.currentQuestionIndex].answer.trim();
+        self.recordLastAnswer(self.questions[self.currentQuestionIndex])
         if (userAnswer === correctAnswer) {
-            currentQuestionIndex++;
+            self.currentQuestionIndex++;
             self.ok++;
             document.querySelector("#correct").play();
             displayQuestion();
         } else {
-            let q = self.questions[currentQuestionIndex].question
+            let q = self.questions[self.currentQuestionIndex].question
             document.querySelector("#incorrect").play();
-            addErrorQues(self.questions[currentQuestionIndex], userAnswer)
+            addErrorQues(self.questions[self.currentQuestionIndex], userAnswer)
             showErrorModal();
             clearInterval(answerClock);
             answerClock = undefined;
@@ -542,23 +653,23 @@
     }
 
     function jump() {
-        if (currentQuestionIndex >= self.questions.length) {
+        if (self.currentQuestionIndex >= self.questions.length) {
             showStep(3)
             self.questionText = "题目已完成，正确：" + self.ok + ", 错误：" + self.error + ", 跳过：" + self.jump_num + ", 超时：" + self.timeout;
             self.gameOver = true
         }
         document.querySelector("#correct").play();
-        let q = self.questions[currentQuestionIndex].question
+        let q = self.questions[self.currentQuestionIndex].question
         var userAnswer = self.answerText.trim();
-        addJumpQues(self.questions[currentQuestionIndex], userAnswer)
-        currentQuestionIndex++;
+        addJumpQues(self.questions[self.currentQuestionIndex], userAnswer)
+        self.currentQuestionIndex++;
         displayQuestion();
     }
 
     function jumpTimeout() {
         document.querySelector("#correct").play();
-        let q = self.questions[currentQuestionIndex].question
-        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
+        let q = self.questions[self.currentQuestionIndex].question
+        var correctAnswer = self.questions[self.currentQuestionIndex].answer.trim();
         stopClock = true;
         Swal.fire({
             title: '回答超时',
@@ -571,8 +682,8 @@
         }).then((result) => {
             stopClock = false;
             var userAnswer = self.answerText.trim();
-            addJumpTimeoutQues(self.questions[currentQuestionIndex], userAnswer)
-            currentQuestionIndex++;
+            addJumpTimeoutQues(self.questions[self.currentQuestionIndex], userAnswer)
+            self.currentQuestionIndex++;
             displayQuestion();
         })
     }
@@ -600,14 +711,14 @@
         if (!errorQuestion.has(q.id)) {
             errorQuestion.add(q.id)
             incorrectAnswers.push(q);
-            self.error ++;
+            self.error++;
         }
     }
 
     function showErrorModal() {
         let body = `<div style="max-width: 500px;overflow-x: auto">
-                 <div><span style="color: green;background: #ececec">${self.questions[currentQuestionIndex].answer}</span></div><br/>
-                 <div><span style="background: #ececec">${compareStrings(self.questions[currentQuestionIndex].answer, self.answerText.trim())}</span></div>
+                 <div><span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div><br/>
+                 <div><span style="background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
                  </div>
             `
         Swal.fire({
@@ -624,16 +735,16 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 if (self.startTimeChecked) {
-                    if (self.questions[currentQuestionIndex]) {
-                        var answer = self.questions[currentQuestionIndex].answer;
+                    if (self.questions[self.currentQuestionIndex]) {
+                        var answer = self.questions[self.currentQuestionIndex].answer;
                         setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
                     }
                 }
             } else if (result.isDenied) {
                 Swal.fire(body).then(() => {
                     if (self.startTimeChecked) {
-                        if (self.questions[currentQuestionIndex]) {
-                            var answer = self.questions[currentQuestionIndex].answer;
+                        if (self.questions[self.currentQuestionIndex]) {
+                            var answer = self.questions[self.currentQuestionIndex].answer;
                             setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
                         }
                     }
@@ -647,6 +758,7 @@
 
     function handleFileSelect(event) {
         var file = event.target.files[0];
+        console.log(file)
         var reader = new FileReader();
         reader.onload = function (e) {
             var contents = e.target.result.replace(/\r+/g, '').replace(/\n+/g, '\n');
@@ -683,7 +795,7 @@
     }
 
     function againAnswers(flag) {
-        currentQuestionIndex = 0
+        self.currentQuestionIndex = 0
         self.ok = 0
         self.error = 0
         self.jump_num = 0
@@ -727,7 +839,6 @@
 
     function groupQuestion(jsonData) {
         const groupedData = jsonData.reduce((acc, obj) => {
-            debugger
             const key = obj.file_id;
             if (!acc[key]) {
                 acc[key] = [];
@@ -739,8 +850,21 @@
         return groupedData;
     }
 
+    function groupQuestionFile(jsonData) {
+        const groupedData = jsonData.reduce((acc, obj) => {
+            const key = obj.fileName;
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(obj);
+            return acc;
+        }, {});
+
+        return groupedData;
+    }
+
     function exportIncorrectAnswers() {
-        var zip = new JSZip();
+        var all_file_list = []
         document.querySelector("#correct").play();
         // 获取当前日期
         var currentDate = new Date();
@@ -750,107 +874,147 @@
         var content = "";
         let incorrectAnswersBy = groupQuestion(incorrectAnswers)
         for (let file_id in incorrectAnswersBy) {
+            content = "";
             let incorrectAnswersSub = incorrectAnswersBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
                 var userAnswer = incorrectAnswersSub[i].userAnswer;
                 content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
             }
+            if (content) {
+                let all_file = {}
+                // zip.file(fileName + "_错题记录_" + formattedDate + ".txt", content);
+                all_file['fileName'] = fileName;
+                all_file['subName'] = "错题记录.txt";
+                all_file['content'] = content;
+                all_file_list.push(all_file)
+            }
         }
-        if (content) {
-            zip.file("错题记录_" + formattedDate + ".txt", content);
-        }
+
 
         // 错误的题
         content = "";
         for (let file_id in incorrectAnswersBy) {
+            content = "";
             let incorrectAnswersSub = incorrectAnswersBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
                 content += correctAnswer + "\n" + question + "\n";
             }
-        }
-        if (content) {
-            zip.file("错题题库_" + formattedDate + ".txt", content);
+            if (content) {
+                // zip.file(fileName + "_错题题库_" + formattedDate + ".txt", content);
+                let all_file = {}
+                all_file['fileName'] = fileName;
+                all_file['subName'] = "错题题库.txt";
+                all_file['content'] = content;
+                all_file_list.push(all_file)
+            }
         }
 
         // 跳过的题
         content = "";
         let jumpAnswersBy = groupQuestion(jumpAnswers)
         for (let file_id in jumpAnswersBy) {
+            content = "";
             let jumpAnswersSub = jumpAnswersBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < jumpAnswersSub.length; i++) {
                 var question = jumpAnswersSub[i].question;
                 var correctAnswer = jumpAnswersSub[i].answer;
                 content += correctAnswer + "\n" + question + "\n";
             }
-        }
-        if (content) {
-            zip.file("跳过题库_" + formattedDate + ".txt", content);
+            if (content) {
+                // zip.file(fileName + "_跳过题库_" + formattedDate + ".txt", content);
+                let all_file = {}
+                all_file['fileName'] = fileName;
+                all_file['subName'] = "跳过题库.txt";
+                all_file['content'] = content;
+                all_file_list.push(all_file)
+            }
         }
 
         // 超时的题
         content = "";
         let jumpTimeoutQuestionBy = groupQuestion(jumpTimeoutQuestion)
         for (let file_id in jumpTimeoutQuestionBy) {
+            content = "";
             let jumpTimeoutQuestionSub = jumpTimeoutQuestionBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < jumpTimeoutQuestionSub.length; i++) {
                 var question = jumpTimeoutQuestionSub[i].question;
                 var correctAnswer = jumpTimeoutQuestionSub[i].answer;
                 var userAnswer = jumpTimeoutQuestionSub[i].userAnswer;
                 content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
             }
-        }
-        if (content) {
-            zip.file("超时记录_" + formattedDate + ".txt", content);
-        }
+            if (content) {
+                // zip.file(fileName + "_超时记录_" + formattedDate + ".txt", content);
+                let all_file = {}
+                all_file['fileName'] = fileName;
+                all_file['subName'] = "超时记录.txt";
+                all_file['content'] = content;
+                all_file_list.push(all_file)
+            }
 
+        }
         content = "";
         for (let file_id in jumpTimeoutQuestionBy) {
+            content = "";
             let jumpTimeoutQuestionSub = jumpTimeoutQuestionBy[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < jumpTimeoutQuestionSub.length; i++) {
                 var question = jumpTimeoutQuestionSub[i].question;
                 var correctAnswer = jumpTimeoutQuestionSub[i].answer;
                 content += correctAnswer + "\n" + question + "\n";
             }
-        }
-        if (content) {
-            zip.file("超时题库_" + formattedDate + ".txt", content);
+            if (content) {
+                // zip.file(fileName + "_超时题库_" + formattedDate + ".txt", content);
+                let all_file = {}
+                all_file['fileName'] = fileName;
+                all_file['subName'] = "超时题库.txt";
+                all_file['content'] = content;
+                all_file_list.push(all_file)
+            }
         }
 
         content = "";
         let questions_bak_by = groupQuestion(self.questions_bak)
         for (let file_id in questions_bak_by) {
+            content = "";
             let questions_bak_sub = questions_bak_by[file_id]
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
-            content += "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>" + fileName + "<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
             for (var i = 0; i < questions_bak_sub.length; i++) {
                 var question = questions_bak_sub[i].question;
                 var answer = questions_bak_sub[i].answer;
                 var time = questions_bak_sub[i]['time'] || 0;
                 content += question + "\n" + answer + "\n" + time + "\n";
             }
-        }
-        if (content) {
-            zip.file("耗时记录_" + formattedDate + ".txt", content);
+            if (content) {
+                // zip.file(fileName + "_耗时记录_" + formattedDate + ".txt", content);
+                let all_file = {}
+                all_file['fileName'] = fileName;
+                all_file['subName'] = "耗时记录.txt";
+                all_file['content'] = content;
+                all_file_list.push(all_file)
+            }
         }
 
-        zip.generateAsync({type: "blob"})
-            .then(function (content) {
-                saveAs(content, "题目合集.zip");
-            });
+        let allFileData = groupQuestionFile(all_file_list)
+        for (let zipName in allFileData) {
+            var zip = new JSZip();
+            let subData = allFileData[zipName]
+            for (let data of subData) {
+                zip.file(data['subName'], data['content']);
+            }
+            zip.generateAsync({type: "blob"})
+                .then(function (content) {
+                    saveAs(content, zipName + " - " + formattedDate + " - 合集.zip");
+                });
+        }
+
     }
 
     let downTime = 0.1;
@@ -919,18 +1083,54 @@
         return result;
     }
 
+    function compareStringReplace(stringA, stringB) {
+        var result = '';
+        for (var i = 0; i < stringB.length; i++) {
+            let aChar = stringA[i]
+            let bChar = stringB[i]
+            if (aChar !== undefined && bChar !== undefined) {
+                if (stringA[i] !== bChar) {
+                    if (bChar === ' ') {
+                        bChar = ' '
+                    }
+                    result += '_';
+                } else {
+                    result += bChar;
+                }
+            } else if (aChar == undefined && bChar !== undefined) {
+                if (bChar === ' ') {
+                    bChar = ' '
+                }
+                result += '_';
+            } else if (aChar !== undefined && bChar == undefined) {
+                if (bChar === ' ') {
+                    bChar = ' '
+                }
+                result += '_';
+            }
+        }
+        return result;
+    }
+
     // 监听键盘按下事件
     document.addEventListener('keydown', function (event) {
         document.querySelector("#btnKeyPress").play();
     });
 
-    function readWord() {
-        var correctAnswer = self.questions[currentQuestionIndex].answer.trim();
-        let audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${correctAnswer}&type=${self.readWordSelected}`)
-        audio.playbackRate = self.playbackRate; // 设置播放速度为1.5倍
-        audio.play();
+    function hasChinese(str) {
+        const pattern = /[\u4e00-\u9fff]/;
+        return pattern.test(str);
     }
 
+    function readAnswer() {
+        var correctAnswer = self.questions[self.currentQuestionIndex].answer.trim();
+        self.speak(correctAnswer)
+    }
+
+    function readTitle() {
+        var text = self.questions[self.currentQuestionIndex].question.trim();
+        self.speak(text)
+    }
 </script>
 </body>
 </html>
