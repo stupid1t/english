@@ -261,7 +261,7 @@
     <div v-if="currentStep === 2 || currentStep === 3" class="questionContainer">
         <div>
             <div v-if="showQuestionChecked" class="question">
-                <div v-if="!isImageQuestion">
+                <div v-if="!isImageQuestion()">
                     {{questionText}}
                     <span v-if="readWordSelected"><svg onclick="readTitle()"
                                                        style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
@@ -269,8 +269,8 @@
                                                        fill="currentColor"><path
                             d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
                 </div>
-                <div v-if="isImageQuestion">
-                    <img :src="'/english/images/' + questionText" style="max-height: 250px">
+                <div v-if="isImageQuestion()">
+                    <img :src="'./images/' + questionText" style="max-height: 250px">
                 </div>
             </div>
         </div>
@@ -418,7 +418,8 @@
         },
         methods: {
             isImageQuestion(){
-                return this.questionText.endsWith(".png") || this.questionText.endsWith(".jpg") || this.questionText.endsWith(".jpeg")|| this.questionText.endsWith(".webp")
+                let image = this.questionText.endsWith(".png") || this.questionText.endsWith(".jpg") || this.questionText.endsWith(".jpeg")|| this.questionText.endsWith(".webp")
+                return image;
             },
             startTimeChange() {
                 if (this.startTimeChecked) {
@@ -611,9 +612,9 @@
                 }, 500)
             }
         } else {
-            showStep(3)
             self.questionText = "题目已完成，正确：" + self.ok + ", 错误：" + self.error + ", 跳过：" + self.jump_num + ", 超时：" + self.timeout;
             self.gameOver = true
+            showStep(3)
         }
     }
 
