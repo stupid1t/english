@@ -616,6 +616,9 @@
             self.gameOver = true
             showStep(3)
         }
+        setTimeout(()=>{
+            document.querySelector(".answer").focus();
+        },300)
     }
 
     function insertAnswer() {
@@ -638,15 +641,15 @@
             document.querySelector("#incorrect").play();
             return;
         }
-        self.questions[self.currentQuestionIndex]['lastAnswer'] = userAnswer
         var correctAnswer = self.questions[self.currentQuestionIndex].answer.trim();
-        self.recordLastAnswer(self.questions[self.currentQuestionIndex])
         if (userAnswer === correctAnswer) {
             self.currentQuestionIndex++;
             self.ok++;
             document.querySelector("#correct").play();
             displayQuestion();
         } else {
+            self.questions[self.currentQuestionIndex]['lastAnswer'] = userAnswer
+            self.recordLastAnswer(self.questions[self.currentQuestionIndex])
             let q = self.questions[self.currentQuestionIndex].question
             document.querySelector("#incorrect").play();
             addErrorQues(self.questions[self.currentQuestionIndex], userAnswer)
@@ -744,6 +747,9 @@
                         setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
                     }
                 }
+                setTimeout(()=>{
+                    document.querySelector(".answer").focus();
+                },300)
             } else if (result.isDenied) {
                 Swal.fire(body).then(() => {
                     if (self.startTimeChecked) {
@@ -752,6 +758,9 @@
                             setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
                         }
                     }
+                    setTimeout(()=>{
+                        document.querySelector(".answer").focus();
+                    },300)
                 });
             } else {
                 Swal.fire('按钮2点击了');
