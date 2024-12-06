@@ -186,6 +186,10 @@
                     <option :value=0>关</option>
                     <option :value=2>开</option>
                 </select>
+                <label style="font-size:20px" for="readTitleWord" >题目播放</label>
+                <input style="font-size:20px" id="readTitleWord" type="checkbox" v-model="readTitleWordChecked"/>
+                <label style="font-size:20px" for="readAnswerWordChecked" >答案播放</label>
+                <input style="font-size:20px" id="readAnswerWordChecked" type="checkbox" v-model="readAnswerWordChecked"/>
                 <span v-show="readWordSelected && cnVoices.length > 0">中</span>
                 <select style="font-size:20px" v-model="selectCnVoices"
                         v-show="readWordSelected && cnVoices.length > 0">
@@ -263,7 +267,7 @@
             <div v-if="showQuestionChecked" class="question">
                 <div v-if="!isImageQuestion()">
                     {{questionText}}
-                    <span v-if="readWordSelected"><svg onclick="readTitle()"
+                    <span v-if="readWordSelected && readAnswerTitleChecked"><svg onclick="readTitle()"
                                                        style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
                                                        viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"
                                                        fill="currentColor"><path
@@ -281,7 +285,7 @@
             <div v-show="!gameOver" style="margin: 10px; text-align: center">
                 <div style="font-size: 30px">正确:{{ok}} 错误:{{error}} 跳过:{{jump_num}} 超时:{{timeout}}</div>
                 <button style="background: red" onclick="window.location.reload()">重选题库</button>
-                <button v-if="readWordSelected" onclick="readAnswer()">播放答案</button>
+                <button v-if="readWordSelected && readAnswerWordChecked" onclick="readAnswer()">播放答案</button>
                 <button v-if="hasLastAnswer" onclick="insertAnswer()">插入上次回答</button>
                 <button onclick="checkAnswer()">下一题</button>
                 <button onclick="jump()">跳过</button>
@@ -405,6 +409,8 @@
             enVoices: [],
             selectCnVoices: '',
             selectEnVoices: '',
+            readAnswerWordChecked: true,
+            readTitleWordChecked: true
         },
         mounted() {
             this.loadItems();
