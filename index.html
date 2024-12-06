@@ -887,7 +887,7 @@
         document.querySelector("#correct").play();
         // 获取当前日期
         var currentDate = new Date();
-        var formattedDate = currentDate.toISOString().split('T')[0];
+        var formattedDate = currentDate.toLocaleString().split(' ')[0];
 
         // 错题记录
         var content = "";
