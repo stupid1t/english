@@ -501,8 +501,12 @@
             },
             getVoices() {
                 let v = undefined;
+                let times = 0;
                 v = setInterval(() => {
                     let voices = window.speechSynthesis.getVoices().filter(o => (o.lang === 'zh-CN' || o.lang === 'en-US') && o.voiceURI.indexOf('Natural') > -1)
+                    if(times > 5){
+                        voices = window.speechSynthesis.getVoices().filter(o => (o.lang === 'zh-CN' || o.lang === 'en-US') > -1)
+                    }
                     let cnVoices = voices.filter(o => (o.lang === 'zh-CN'))
                     if (cnVoices.length && self.cnVoices.length === 0) {
                         cnVoices = cnVoices.map(o => {
@@ -535,6 +539,7 @@
                         clearInterval(v);
                         self.selectDefault()
                     }
+                    times++;
                 }, 1000)
             },
             speak(text) {
