@@ -664,8 +664,10 @@
             document.querySelector("#correct").play();
             displayQuestion();
         } else {
-            self.questions[self.currentQuestionIndex]['lastAnswer'] = userAnswer
-            self.recordLastAnswer(self.questions[self.currentQuestionIndex])
+            if (!self.questions[self.currentQuestionIndex]['lastAnswer']){
+                self.questions[self.currentQuestionIndex]['lastAnswer'] = userAnswer
+                self.recordLastAnswer(self.questions[self.currentQuestionIndex])
+            }
             let q = self.questions[self.currentQuestionIndex].question
             document.querySelector("#incorrect").play();
             addErrorQues(self.questions[self.currentQuestionIndex], userAnswer)
