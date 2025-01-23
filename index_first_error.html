@@ -728,7 +728,7 @@
     }
 
     function addErrorQues(q, userAnswer) {
-        q['userAnswer'] = userAnswer
+        q['userErrorAnswer'] = userAnswer
         if (!errorQuestion.has(q.id)) {
             errorQuestion.add(q.id)
             incorrectAnswers.push(q);
@@ -907,7 +907,7 @@
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
-                var userAnswer = incorrectAnswersSub[i].userAnswer;
+                var userAnswer = incorrectAnswersSub[i]['userErrorAnswer'];
                 content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
             }
             if (content) {
