@@ -728,9 +728,8 @@
     }
 
     function addErrorQues(q, userAnswer) {
-        q['userErrorAnswer'] = userAnswer
-        debugger
         if (!errorQuestion.has(q.id)) {
+            q['userErrorAnswer'] = userAnswer
             errorQuestion.add(q.id)
             incorrectAnswers.push(q);
             self.error++;
