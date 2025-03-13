@@ -289,7 +289,7 @@
                   onkeypress="checkEnter(event)"></textarea>
             <div v-show="!gameOver" style="margin: 10px; text-align: center">
                 <div style="font-size: 30px">正确:{{ok}} 错误:{{error}} 跳过:{{jump_num}} 超时:{{timeout}}</div>
-                <button style="background: red" onclick="window.location.reload()">重选题库</button>
+                <button style="background: red" onclick="window.location.href = 'index.html?reload=true'">重选题库</button>
                 <button v-if="readWordSelected && readAnswerWordChecked" onclick="readAnswer()">播放答案</button>
                 <button v-if="hasLastAnswer" onclick="insertAnswer()">插入上次回答</button>
                 <button onclick="checkAnswer()">下一题</button>
@@ -297,7 +297,7 @@
             </div>
         </div>
         <div v-show="gameOver" style="display:none">
-            <button style="background: red" onclick="window.location.reload()">重选题库</button>
+            <button style="background: red" onclick="window.location.href = 'index.html?reload=true'">重选题库</button>
             <button onclick="againAnswers()">再来一次</button>
             <button v-show="(error + jump_num + timeout) > 0" onclick="againAnswers(true)">练习错误/超时/跳过题目
             </button>
@@ -383,6 +383,18 @@
     // 初始化数据库
     Database.init(table_import);
     Database.init(table_questions);
+
+    window.onload = function () {
+        if(window.location.search.indexOf("reload=true") === -1){
+            console.log("清空错误答案")
+            // 如果有历史题库，清空错误答案
+            let storedData = JSON.parse(localStorage.getItem(table_questions));
+            for(let q of storedData){
+                q['errorAnswers'] = []
+            }
+            localStorage.setItem(table_questions, JSON.stringify(storedData));
+        }
+    }
 </script>
 <script>
     const self = new Vue({
@@ -479,6 +491,19 @@
             },
             recordLastAnswer(question) {
                 Database.updateById(table_questions, {id: question.id, lastAnswer: question.lastAnswer})
+            },
+            recordErrorAnswers(userAnswer) {
+                let nowErrorAnswer = self.questions[self.currentQuestionIndex]['errorAnswers']
+                nowErrorAnswer.push(userAnswer)
+                nowErrorAnswer = [...new Set(nowErrorAnswer)]
+                self.questions[self.currentQuestionIndex]['errorAnswers'] = nowErrorAnswer
+                let question = self.questions[self.currentQuestionIndex]
+                Database.updateById(table_questions, {id: question.id, errorAnswers: question.errorAnswers})
+            },
+            clearAllErrorAnswers() {
+                for(let question of self.questions){
+                    Database.updateById(table_questions, {id: question.id, errorAnswers: []})
+                }
             },
             formatTimestamp(timestamp) {
                 const date = new Date(timestamp);
@@ -665,6 +690,15 @@
             displayQuestion();
         } else {
             document.querySelector("#incorrect").play();
+
+            // 记录当前错误答案记录
+            if(!self.questions[self.currentQuestionIndex]['errorAnswers']){
+                self.questions[self.currentQuestionIndex]['errorAnswers'] = []
+            }
+
+            // 记录错误答案
+            self.recordErrorAnswers(userAnswer)
+
             addErrorQues(self.questions[self.currentQuestionIndex], userAnswer)
             showErrorModal();
             clearInterval(answerClock);
@@ -737,9 +771,10 @@
     }
 
     function showErrorModal() {
-        let body = `<div style="max-width: 500px;overflow-x: auto">
-                 <div><span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div><br/>
-                 <div><span style="background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
+        let body = `<div style="max-width: 500px;overflow-x: auto; text-align: left">
+                 <div>答案：<span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div><br/>
+                 <div>回答：<span style="color: green;background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
+                 <div>解析：<div style="color: #ff7a00;max-height: 250px;overflow-y: auto;font-size: 22px;margin-top: 5px">${self.questions[self.currentQuestionIndex].explain || '暂无'}</div></div>
                  </div>
             `
         Swal.fire({
@@ -802,10 +837,18 @@
             for (var i = 0; i < lines.length; i += 2) {
                 try {
                     var question = lines[i + 1].trim();
-                    var answer = lines[i].trim();
+                    var answerMore = lines[i].trim();
+                    var match = answerMore.match(/(.*?){(.*?)}/)
+                    var answer = answerMore
+                    var explain = "";
+                    if (match) {
+                        answer = match[1];
+                        explain = match[2];
+                    }
                     import_questions.push({
                         question: question,
                         answer: answer,
+                        explain: explain,
                         file_id: file_record.id
                     });
                 } catch (e) {
@@ -859,6 +902,7 @@
             jumpTimeoutQuestionSet.clear();
         } else {
             self.questions = self.questions_bak;
+            self.clearAllErrorAnswers()
         }
         showStep(2);
         displayQuestion(); // 添加这行代码
@@ -907,7 +951,7 @@
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
-                var userAnswer = incorrectAnswersSub[i].userAnswer;
+                var userAnswer = incorrectAnswersSub[i].errorAnswers.join(" + ");
                 content += question + "\n" + correctAnswer + "\n" + userAnswer + "\n---------------------------------------------------\n";
             }
             if (content) {
