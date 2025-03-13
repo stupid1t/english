@@ -393,6 +393,12 @@
                 q['errorAnswers'] = []
             }
             localStorage.setItem(table_questions, JSON.stringify(storedData));
+
+            swal.fire({
+                title: '清空错误答案',
+                icon: 'success',
+                confirmButtonText: '确定'
+            });
         }
     }
 </script>
@@ -504,6 +510,11 @@
                 for(let question of self.questions){
                     Database.updateById(table_questions, {id: question.id, errorAnswers: []})
                 }
+                swal.fire({
+                    title: '清空错误答案',
+                    icon: 'success',
+                    confirmButtonText: '确定'
+                });
             },
             formatTimestamp(timestamp) {
                 const date = new Date(timestamp);
