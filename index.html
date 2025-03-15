@@ -41,6 +41,9 @@
         }
 
         .question {
+            max-width: 1300px;
+            overflow-x: auto;
+            overflow-y: hidden;
             display: inline-block;
             margin-right: 10px;
             margin-bottom: 10px;
@@ -279,7 +282,7 @@
                 </div>
                 <div v-if="isImageQuestion()" style="width: 800px;height: 300px;overflow-y: auto">
                     <div v-if="!showQuestionChecked"> ************** </div>
-                    <img v-if="showQuestionChecked" :src="'./images/' + questionText" style="width: 100%">
+                    <img onclick="openImageInNewWindow(this.src)" v-if="showQuestionChecked" :src="'./images/' + questionText" style="width: 100%">
                 </div>
             </div>
         </div>
@@ -787,19 +790,47 @@
         }
     }
 
+    function openImageInNewWindow(imageSrc) {
+        // 打开新窗口
+        var newWindow = window.open('', '_blank', 'width=950,height=600');
+
+        // 写入新窗口的 HTML 内容
+        newWindow.document.write(`
+        <html>
+        <head>
+            <title>图片查看</title>
+            <style>
+              body {
+                width: 90%
+              }
+            </style>
+        </head>
+        <body>
+            <img src="${imageSrc}" alt="放大图片">
+        </body>
+        </html>
+    `);
+
+        // 关闭文档写入
+        newWindow.document.close();
+    }
+
+
     function showErrorModal() {
         let explain = self.questions[self.currentQuestionIndex].explain
         let isImage = self.isImageExplain(explain)
-        let explain_html = isImage ? `<img src="./images/${explain}" style="max-width: 500px;overflow-x: auto; text-align: left;width: 100%"">` : `<div style="max-width: 500px;overflow-x: auto; text-align: left">${explain}</div>`
-        let body = `<div style="max-width: 500px;overflow-x: auto; text-align: left">
-                 <div>答案：<span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div><br/>
-                 <div>回答：<span style="color: green;background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
-                 <div>解析：${explain_html}</div>
+        let explain_html = isImage ? `<img onclick="openImageInNewWindow(this.src)" style="max-width: 925px" src="./images/${explain}">` : `<div style="max-width: 925px;text-align: left">${explain}</div>`
+        let body = `<div style="text-align: left">
+                 <div style="margin-top: 5px"><b>答案：</b><span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div>
+                 <div style="margin-top: 5px"><b>回答：</b><span style="color: green;background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
+                 <div style="margin-top: 5px"><b>解析：</b></div>
+                 <div style="max-width: 940px;max-height: 380px;overflow-y: auto;">${explain_html}</div>
                  </div>
             `
         Swal.fire({
             title: '回答错误',
             icon: 'error',
+            showCloseButton: true,
             showDenyButton: true, // 显示第三个按钮
             denyButtonText: '查看答案',
             denyButton: {
@@ -820,7 +851,12 @@
                     document.querySelector(".answer").focus();
                 },300)
             } else if (result.isDenied) {
-                Swal.fire(body).then(() => {
+                Swal.fire({
+                    html: body,
+                    showCloseButton: true,
+                    showConfirmButton: false,
+                    width: '1000px',
+                }).then(() => {
                     if (self.startTimeChecked) {
                         if (self.questions[self.currentQuestionIndex]) {
                             var answer = self.questions[self.currentQuestionIndex].answer;
