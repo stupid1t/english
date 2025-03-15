@@ -452,8 +452,7 @@
             },
             isImageExplain(explain){
                 if(explain){
-                    let image = explain.endsWith(".png") || explain.endsWith(".jpg") || explain.endsWith(".jpeg")|| explain.endsWith(".webp")
-                    return true;
+                    return explain.endsWith(".png") || explain.endsWith(".jpg") || explain.endsWith(".jpeg")|| explain.endsWith(".webp");
                 }
                 return false
             },
