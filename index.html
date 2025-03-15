@@ -450,6 +450,13 @@
                 let image = this.questionText.endsWith(".png") || this.questionText.endsWith(".jpg") || this.questionText.endsWith(".jpeg")|| this.questionText.endsWith(".webp")
                 return image;
             },
+            isImageExplain(explain){
+                if(explain){
+                    let image = explain.endsWith(".png") || explain.endsWith(".jpg") || explain.endsWith(".jpeg")|| explain.endsWith(".webp")
+                    return true;
+                }
+                return false
+            },
             startTimeChange() {
                 if (this.startTimeChecked) {
                     this.showTimer = true
@@ -782,10 +789,13 @@
     }
 
     function showErrorModal() {
+        let explain = self.questions[self.currentQuestionIndex].explain
+        let isImage = self.isImageExplain(explain)
+        let explain_html = isImage ? `<img src="./images/${explain}" style="max-width: 500px;overflow-x: auto; text-align: left;width: 100%"">` : `<div style="max-width: 500px;overflow-x: auto; text-align: left">${explain}</div>`
         let body = `<div style="max-width: 500px;overflow-x: auto; text-align: left">
                  <div>答案：<span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div><br/>
                  <div>回答：<span style="color: green;background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
-                 <div>解析：<div style="color: #ff7a00;max-height: 250px;overflow-y: auto;font-size: 22px;margin-top: 5px">${self.questions[self.currentQuestionIndex].explain || '暂无'}</div></div>
+                 <div>解析：${explain_html}</div>
                  </div>
             `
         Swal.fire({
