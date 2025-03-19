@@ -790,11 +790,11 @@
     function showErrorModal() {
         let explain = self.questions[self.currentQuestionIndex].explain
         let isImage = self.isImageExplain(explain)
-        let explain_html = isImage ? `<img src="./images/${explain}" style="max-width: 500px;overflow-x: auto; text-align: left;width: 100%"">` : `<div style="max-width: 500px;overflow-x: auto; text-align: left">${explain}</div>`
+        let explain_html = isImage ? `<img src="./images/${explain}" style="max-width: 500px;overflow-x: auto; text-align: left;width: 100%"">` : `<div style="max-width: 500px;overflow-x: auto; text-align: left;font-size:36px">${explain}</div>`
         let body = `<div style="max-width: 500px;overflow-x: auto; text-align: left">
-                 <div>答案：<span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div><br/>
-                 <div>回答：<span style="color: green;background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
-                 <div>解析：${explain_html}</div>
+                 <div  style="font-size:36px" >答案：<span style="color: green;background: #ececec;font-size:36px">${self.questions[self.currentQuestionIndex].answer}</span></div><br/>
+                 <div style="font-size:36px">回答：<span style="color: green;background: #ececec;font-size:36px">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
+                 <div  style="font-size:36px">解析：${explain_html}</div>
                  </div>
             `
         Swal.fire({
@@ -993,7 +993,7 @@
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
-                var correctAnswer = incorrectAnswersSub[i].answer;
+                var correctAnswer = `${incorrectAnswersSub[i].answer}{${incorrectAnswersSub[i].explain}`;
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
@@ -1015,7 +1015,7 @@
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
             for (var i = 0; i < jumpAnswersSub.length; i++) {
                 var question = jumpAnswersSub[i].question;
-                var correctAnswer = jumpAnswersSub[i].answer;
+                var correctAnswer = `${jumpAnswersSub[i].answer}{${jumpAnswersSub[i].explain}`;
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
@@ -1058,7 +1058,7 @@
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
             for (var i = 0; i < jumpTimeoutQuestionSub.length; i++) {
                 var question = jumpTimeoutQuestionSub[i].question;
-                var correctAnswer = jumpTimeoutQuestionSub[i].answer;
+                var correctAnswer = `${jumpTimeoutQuestionSub[i].answer}{${jumpTimeoutQuestionSub[i].explain}`;
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
