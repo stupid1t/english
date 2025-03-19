@@ -993,7 +993,10 @@
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
-                var correctAnswer = `${incorrectAnswersSub[i].answer}{${incorrectAnswersSub[i].explain}`;
+                var correctAnswer = incorrectAnswersSub[i].answer;
+                if(incorrectAnswersSub[i].explain){
+                    correctAnswer = `${incorrectAnswersSub[i].answer}{${incorrectAnswersSub[i].explain}`;
+                }
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
@@ -1015,7 +1018,10 @@
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
             for (var i = 0; i < jumpAnswersSub.length; i++) {
                 var question = jumpAnswersSub[i].question;
-                var correctAnswer = `${jumpAnswersSub[i].answer}{${jumpAnswersSub[i].explain}`;
+                var correctAnswer = jumpAnswersSub[i].answer;
+                if(jumpAnswersSub[i].explain){
+                    correctAnswer = `${jumpAnswersSub[i].answer}{${jumpAnswersSub[i].explain}`;
+                }
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
@@ -1058,7 +1064,10 @@
             let fileName = Database.search(table_import, {id: file_id})[0].fileName
             for (var i = 0; i < jumpTimeoutQuestionSub.length; i++) {
                 var question = jumpTimeoutQuestionSub[i].question;
-                var correctAnswer = `${jumpTimeoutQuestionSub[i].answer}{${jumpTimeoutQuestionSub[i].explain}`;
+                var correctAnswer = jumpTimeoutQuestionSub[i].answer;
+                if(jumpTimeoutQuestionSub[i].explain){
+                    correctAnswer = `${jumpTimeoutQuestionSub[i].answer}{${jumpTimeoutQuestionSub[i].explain}`;
+                }
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
