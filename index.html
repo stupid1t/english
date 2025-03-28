@@ -189,10 +189,11 @@
                     <option :value=0>关</option>
                     <option :value=2>开</option>
                 </select>
-                <label style="font-size:20px" for="readTitleWord" >题目播放</label>
+                <label style="font-size:20px" for="readTitleWord">题目播放</label>
                 <input style="font-size:20px" id="readTitleWord" type="checkbox" v-model="readTitleWordChecked"/>
-                <label style="font-size:20px" for="readAnswerWordChecked" >答案播放</label>
-                <input style="font-size:20px" id="readAnswerWordChecked" type="checkbox" v-model="readAnswerWordChecked"/>
+                <label style="font-size:20px" for="readAnswerWordChecked">答案播放</label>
+                <input style="font-size:20px" id="readAnswerWordChecked" type="checkbox"
+                       v-model="readAnswerWordChecked"/>
                 <span v-show="readWordSelected && cnVoices.length > 0">中</span>
                 <select style="font-size:20px" v-model="selectCnVoices"
                         v-show="readWordSelected && cnVoices.length > 0">
@@ -269,20 +270,27 @@
         <div>
             <div class="question">
                 <div v-if="!isImageQuestion()">
-                    <div v-if="showQuestionChecked">{{ questionText}} <span v-if="readWordSelected && readTitleWordChecked"><svg onclick="readTitle()"
-                                                                                                                                 style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
-                                                                                                                                 viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"
-                                                                                                                                 fill="currentColor"><path
-                            d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span></div>
-                    <div v-if="!showQuestionChecked"> ************** <span v-if="readWordSelected && readTitleWordChecked"><svg onclick="readTitle()"
-                                                                                                                                style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
-                                                                                                                                viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"
-                                                                                                                                fill="currentColor"><path
-                            d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span> </div>
+                    <div v-if="showQuestionChecked">{{ questionText}} <span
+                            v-if="readWordSelected && readTitleWordChecked"><svg onclick="readTitle()"
+                                                                                 style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
+                                                                                 viewBox="0 0 1024 1024"
+                                                                                 xmlns="http://www.w3.org/2000/svg"
+                                                                                 fill="currentColor"><path
+                            d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
+                    </div>
+                    <div v-if="!showQuestionChecked"> ************** <span
+                            v-if="readWordSelected && readTitleWordChecked"><svg onclick="readTitle()"
+                                                                                 style="width: 40px;height: 40px; cursor: pointer; z-index: 9999"
+                                                                                 viewBox="0 0 1024 1024"
+                                                                                 xmlns="http://www.w3.org/2000/svg"
+                                                                                 fill="currentColor"><path
+                            d="M417.28 164.198c-12.646 0-25.293 5.325-37.683 15.821L169.779 358.35H76.8c-42.342 0-76.8 34.457-76.8 76.8v204.8c0 42.342 34.458 76.8 76.8 76.8h92.98l209.817 178.33c12.339 10.495 25.037 15.82 37.683 15.82a40.755 40.755 0 0034.304-18.534c6.093-9.165 9.216-20.89 9.216-34.816v-640c0-36.864-21.862-53.402-43.52-53.402zM51.2 640V435.2a25.6 25.6 0 0125.6-25.6h76.8v256H76.8A25.6 25.6 0 0151.2 640zm358.4 213.453l-204.8-174.08V395.827l204.8-174.08v631.706z"></path></svg></span>
+                    </div>
                 </div>
                 <div v-if="isImageQuestion()" style="width: 800px;height: 250px;overflow-y: auto">
-                    <div v-if="!showQuestionChecked"> ************** </div>
-                    <img onclick="openImageInNewWindow(this.src)" v-if="showQuestionChecked" :src="'./images/' + questionText" style="width: 100%">
+                    <div v-if="!showQuestionChecked"> **************</div>
+                    <img onclick="openImageInNewWindow(this.src)" v-if="showQuestionChecked"
+                         :src="'./images/' + questionText" style="width: 100%">
                 </div>
             </div>
         </div>
@@ -292,7 +300,8 @@
                   onkeypress="checkEnter(event)"></textarea>
             <div v-show="!gameOver" style="margin: 10px; text-align: center">
                 <div style="font-size: 30px">正确:{{ok}} 错误:{{error}} 跳过:{{jump_num}} 超时:{{timeout}}</div>
-                <button style="background: red" onclick="window.location.href = 'index.html?reload=true'">重选题库</button>
+                <button style="background: red" onclick="window.location.href = 'index.html?reload=true'">重选题库
+                </button>
                 <button v-if="readWordSelected && readAnswerWordChecked" onclick="readAnswer()">播放答案</button>
                 <button v-if="hasLastAnswer" onclick="insertAnswer()">插入上次回答</button>
                 <button onclick="checkAnswer()">下一题</button>
@@ -388,11 +397,11 @@
     Database.init(table_questions);
 
     window.onload = function () {
-        if(window.location.search.indexOf("reload=true") === -1){
+        if (window.location.search.indexOf("reload=true") === -1) {
             console.log("清空错误答案")
             // 如果有历史题库，清空错误答案
             let storedData = JSON.parse(localStorage.getItem(table_questions));
-            for(let q of storedData){
+            for (let q of storedData) {
                 q['errorAnswers'] = []
             }
             localStorage.setItem(table_questions, JSON.stringify(storedData));
@@ -449,13 +458,13 @@
             }
         },
         methods: {
-            isImageQuestion(){
-                let image = this.questionText.endsWith(".png") || this.questionText.endsWith(".jpg") || this.questionText.endsWith(".jpeg")|| this.questionText.endsWith(".webp")
+            isImageQuestion() {
+                let image = this.questionText.endsWith(".png") || this.questionText.endsWith(".jpg") || this.questionText.endsWith(".jpeg") || this.questionText.endsWith(".webp")
                 return image;
             },
-            isImageExplain(explain){
-                if(explain){
-                    return explain.endsWith(".png") || explain.endsWith(".jpg") || explain.endsWith(".jpeg")|| explain.endsWith(".webp");
+            isImageExplain(explain) {
+                if (explain) {
+                    return explain.endsWith(".png") || explain.endsWith(".jpg") || explain.endsWith(".jpeg") || explain.endsWith(".webp");
                 }
                 return false
             },
@@ -516,7 +525,7 @@
                 Database.updateById(table_questions, {id: question.id, errorAnswers: question.errorAnswers})
             },
             clearAllErrorAnswers() {
-                for(let question of self.questions){
+                for (let question of self.questions) {
                     Database.updateById(table_questions, {id: question.id, errorAnswers: []})
                 }
                 swal.fire({
@@ -549,7 +558,7 @@
                 let times = 0;
                 v = setInterval(() => {
                     let voices = window.speechSynthesis.getVoices().filter(o => (o.lang === 'zh-CN' || o.lang === 'en-US') && o.voiceURI.indexOf('Natural') > -1)
-                    if(times > 5){
+                    if (times > 5) {
                         voices = window.speechSynthesis.getVoices().filter(o => (o.lang === 'zh-CN' || o.lang === 'en-US') > -1)
                     }
                     let cnVoices = voices.filter(o => (o.lang === 'zh-CN'))
@@ -691,9 +700,9 @@
                 }, 500)
             }
         }
-        setTimeout(()=>{
+        setTimeout(() => {
             document.querySelector(".answer").focus();
-        },300)
+        }, 300)
     }
 
     function insertAnswer() {
@@ -726,7 +735,7 @@
             document.querySelector("#incorrect").play();
 
             // 记录当前错误答案记录
-            if(!self.questions[self.currentQuestionIndex]['errorAnswers']){
+            if (!self.questions[self.currentQuestionIndex]['errorAnswers']) {
                 self.questions[self.currentQuestionIndex]['errorAnswers'] = []
             }
 
@@ -835,10 +844,10 @@
         let isImage = self.isImageExplain(explain)
         let explain_html = isImage ? `<img onclick="openImageInNewWindow(this.src)" style="max-width: 925px" src="./images/${explain}">` : `<div style="max-width: 925px;text-align: left">${explain}</div>`
         let body = `<div style="text-align: left">
-                 <div style="margin-top: 5px"><b>答案：</b><span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div>
-                 <div style="margin-top: 5px"><b>回答：</b><span style="color: green;background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
-                 <div style="margin-top: 5px"><b>解析：</b></div>
-                 <div style="max-width: 940px;max-height: 380px;overflow-y: auto;">${explain_html}</div>
+                 <div style="margin-top: 5px;font-size:36px"><b>答案：</b><span style="color: green;background: #ececec">${self.questions[self.currentQuestionIndex].answer}</span></div>
+                 <div style="margin-top: 5px;font-size:36px"><b>回答：</b><span style="color: green;background: #ececec">${compareStrings(self.questions[self.currentQuestionIndex].answer, self.answerText.trim())}</span></div>
+                 <div style="margin-top: 5px;font-size:36px"><b>解析：</b></div>
+                 <div style="max-width: 940px;max-height: 380px;overflow-y: auto;font-size:30px">${explain_html}</div>
                  </div>
             `
         Swal.fire({
@@ -861,9 +870,9 @@
                         setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
                     }
                 }
-                setTimeout(()=>{
+                setTimeout(() => {
                     document.querySelector(".answer").focus();
-                },300)
+                }, 300)
             } else if (result.isDenied) {
                 Swal.fire({
                     html: body,
@@ -877,9 +886,9 @@
                             setClock(new Decimal(answer.replace(/\s+/g, '').length).mul(self.intervalValue).toNumber().toFixed(1, Decimal.ROUND_DOWN), true)
                         }
                     }
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         document.querySelector(".answer").focus();
-                    },300)
+                    }, 300)
                 });
             } else {
                 Swal.fire('按钮2点击了');
