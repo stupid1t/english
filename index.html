@@ -1017,7 +1017,7 @@
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
                 if (incorrectAnswersSub[i].explain) {
-                    correctAnswer = `${incorrectAnswersSub[i].answer}{${incorrectAnswersSub[i].explain}`;
+                    correctAnswer = `${incorrectAnswersSub[i].answer}{${incorrectAnswersSub[i].explain}}`;
                 }
                 content += correctAnswer + "\n" + question + "\n";
             }
@@ -1042,7 +1042,7 @@
                 var question = jumpAnswersSub[i].question;
                 var correctAnswer = jumpAnswersSub[i].answer;
                 if (jumpAnswersSub[i].explain) {
-                    correctAnswer = `${jumpAnswersSub[i].answer}{${jumpAnswersSub[i].explain}`;
+                    correctAnswer = `${jumpAnswersSub[i].answer}{${jumpAnswersSub[i].explain}}`;
                 }
                 content += correctAnswer + "\n" + question + "\n";
             }
