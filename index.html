@@ -1088,7 +1088,7 @@
                 var question = jumpTimeoutQuestionSub[i].question;
                 var correctAnswer = jumpTimeoutQuestionSub[i].answer;
                 if (jumpTimeoutQuestionSub[i].explain) {
-                    correctAnswer = `${jumpTimeoutQuestionSub[i].answer}{${jumpTimeoutQuestionSub[i].explain}`;
+                    correctAnswer = `${jumpTimeoutQuestionSub[i].answer}{${jumpTimeoutQuestionSub[i].explain}}`;
                 }
                 content += correctAnswer + "\n" + question + "\n";
             }
