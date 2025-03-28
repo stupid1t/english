@@ -676,6 +676,20 @@
             self.questionText = "题目已完成，正确：" + self.ok + ", 错误：" + self.error + ", 跳过：" + self.jump_num + ", 超时：" + self.timeout;
             self.gameOver = true
             showStep(3)
+            if (self.error > 0 || self.jump_num > 0 || self.timeout > 0) {
+                window.setTimeout(() => {
+                    Swal.fire({
+                        toast: true,
+                        position: 'center', // 可以选择 'top', 'top-start', 'top-end', 'center', 'center-start', 'center-end', 'bottom', 'bottom-start', 'bottom-end'
+                        icon: 'warning', // 图标类型
+                        title: '自动导出题库中...',
+                        showConfirmButton: false,
+                        timer: 3000, // 自动关闭时间（毫秒）
+                        timerProgressBar: true
+                    });
+                    exportIncorrectAnswers()
+                }, 500)
+            }
         }
         setTimeout(()=>{
             document.querySelector(".answer").focus();
@@ -1030,6 +1044,9 @@
             for (var i = 0; i < incorrectAnswersSub.length; i++) {
                 var question = incorrectAnswersSub[i].question;
                 var correctAnswer = incorrectAnswersSub[i].answer;
+                if (incorrectAnswersSub[i].explain) {
+                    correctAnswer = `${incorrectAnswersSub[i].answer}{${incorrectAnswersSub[i].explain}}`;
+                }
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
@@ -1052,6 +1069,9 @@
             for (var i = 0; i < jumpAnswersSub.length; i++) {
                 var question = jumpAnswersSub[i].question;
                 var correctAnswer = jumpAnswersSub[i].answer;
+                if (jumpAnswersSub[i].explain) {
+                    correctAnswer = `${jumpAnswersSub[i].answer}{${jumpAnswersSub[i].explain}}`;
+                }
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
@@ -1095,6 +1115,9 @@
             for (var i = 0; i < jumpTimeoutQuestionSub.length; i++) {
                 var question = jumpTimeoutQuestionSub[i].question;
                 var correctAnswer = jumpTimeoutQuestionSub[i].answer;
+                if (jumpTimeoutQuestionSub[i].explain) {
+                    correctAnswer = `${jumpTimeoutQuestionSub[i].answer}{${jumpTimeoutQuestionSub[i].explain}}`;
+                }
                 content += correctAnswer + "\n" + question + "\n";
             }
             if (content) {
